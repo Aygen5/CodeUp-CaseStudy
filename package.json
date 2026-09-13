@@ -1,0 +1,30 @@
+{
+  "name": "codeup-supplier-management",
+  "version": "1.0.0",
+  "description": "Supplier Management — Tedarikçi Onboarding & Onay (CodeUp Case Study)",
+  "repository": "https://github.com/Aygen5/CodeUp-CaseStudy.git",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@sap/cds": "^8",
+    "@sap/xsenv": "^5",
+    "@sap/xssec": "^4",
+    "bcryptjs": "^3.0.3",
+    "express": "^4"
+  },
+  "devDependencies": {
+    "@cap-js/sqlite": "^1",
+    "@sap/cds-dk": "^9.9.6"
+  },
+  "scripts": {
+    "start": "cds-serve",
+    "watch": "cds watch"
+  },
+  "cds": {
+    "requires": {
+      "db": {
+        "kind": "sqlite"
+      }
+    }
+  }
+}

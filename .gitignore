@@ -1,0 +1,34 @@
+# Node / npm
+node_modules/
+package-lock.json
+npm-debug.log*
+
+# SAP CAP / BTP Private & Secrets
+.cdsrc-private.json
+default-env.json
+default-services.json
+vcap-local.json
+*.key
+*.pem
+
+# Local Databases (SQLite)
+*.db
+*.sqlite
+*.sqlite3
+
+# Build & Dist Outputs
+_build/
+dist/
+gen/
+mta_archives/
+.build/
+
+# IDE & OS
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.idea/
+*.log

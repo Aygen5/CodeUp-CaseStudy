@@ -11,12 +11,12 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
 ## 📌 FAZ 1: Altyapı, Geliştirme Ortamı ve Proje İskeleti (Scaffolding)
 *Bu fazda CAP backend ve proje yapısı için gerekli temel dizinler, konfigürasyonlar ve npm paketleri kurulur.*
 
-* [ ] **Adım 1.1: CAP İskeletinin Kurulması**
+* [x] **Adım 1.1: CAP İskeletinin Kurulması**
   * `cds init` altyapısı ile `db`, `srv`, `app` klasör yapısının oluşturulması.
   * `package.json` yapılandırması (scripts: `cds watch`, `start` vb.).
-* [ ] **Adım 1.2: Temel Bağımlılıkların Eklenmesi**
+* [x] **Adım 1.2: Temel Bağımlılıkların Eklenmesi**
   * `@sap/cds`, `bcryptjs` (şifre hash'leme), `@sap/xssec`, `@sap/xsenv`, `@sap/approuter` paketlerinin kurulması.
-* [ ] **Adım 1.3: Geliştirici Güvenliği ve `.gitignore`**
+* [x] **Adım 1.3: Geliştirici Güvenliği ve `.gitignore`**
   * `.cdsrc-private.json`, `default-env.json`, `node_modules` ve geçici SQLite dosyalarının Git takibi dışına çıkarılması.
 
 ---
