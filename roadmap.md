@@ -24,7 +24,7 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
 ## 📌 FAZ 2: Veri Modeli ve Gerçekçi Veri Seti (Data Architecture)
 *Bu fazda tedarikçilerin ve başvuruların saklanacağı veritabanı modelleri ve gerçekçi tohum verileri hazırlanır.*
 
-* [ ] **Adım 2.1: CDS Veri Modelinin Tanımlanması (`db/schema.cds`)**
+* [x] **Adım 2.1: CDS Veri Modelinin Tanımlanması (`db/schema.cds`)**
   * `Suppliers` Varlığı: `ID`, `email` (unique), `passwordHash`, `createdAt`.
   * `Submissions` Varlığı:
     * `ID`, `supplier` (Association to `Suppliers`).
