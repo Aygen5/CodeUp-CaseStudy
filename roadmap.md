@@ -37,7 +37,7 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
     * `certificate` (`LargeBinary`), `certificateMimeType`, `certificateFileName`.
 * [x] **Adım 2.2: 10+ Gerçekçi Kurumsal Başvuru Kaydı (`db/data/*.csv`)**
   * Gerçekçi uluslararası ve Alman firma isimleri, geçerli formatta vergi numaraları, adresleri ve farklı statülerdeki (*Bekleyen*, *Onaylanan*, *Reddedilen*) tohum verilerin hazırlanması.
-* [ ] **Adım 2.3: Kontrollü Test PDF Belgelerinin Hazırlanması**
+* [x] **Adım 2.3: Kontrollü Test PDF Belgelerinin Hazırlanması**
   * AI analizi ve dosya yükleme testlerinde kullanılacak kontrollü test belgelerinin (`valid-cert.pdf`, `expired-cert.pdf`, `large-file-10mb.pdf`) test klasöründe yapılandırılması.
 * [ ] **Adım 2.4: Yerel Veritabanının Başlatılması**
   * `cds deploy --to sqlite` ile yerel veritabanının ayağa kaldırılması ve verilerin eksiksiz yüklendiğinin doğrulanması.

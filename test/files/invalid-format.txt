@@ -1,0 +1,6 @@
+CODEUP SUPPLIER MANAGEMENT - TEST BELGESİ
+=========================================
+Dosya Adı: invalid-format.txt
+Amaç: Supplier Portal dosya yükleme ekranında PDF olmayan dosya türü engelleme kuralının test edilmesi.
+İçerik: Bu dosya bilerek düz metin (.txt) olarak oluşturulmuştur ve PDF formatında değildir.
+Beklenen Davranış: Kullanıcı arayüzü ve backend dosya türü validasyonu bu dosyayı reddetmelidir.
