@@ -35,7 +35,7 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
     * `rejectionReason` (Onaycının gerekçe notu).
     * `editableFields` (Tedarikçinin düzenlemesine izin verilen alanların listesi).
     * `certificate` (`LargeBinary`), `certificateMimeType`, `certificateFileName`.
-* [ ] **Adım 2.2: 10+ Gerçekçi Kurumsal Başvuru Kaydı (`db/data/*.csv`)**
+* [x] **Adım 2.2: 10+ Gerçekçi Kurumsal Başvuru Kaydı (`db/data/*.csv`)**
   * Gerçekçi uluslararası ve Alman firma isimleri, geçerli formatta vergi numaraları, adresleri ve farklı statülerdeki (*Bekleyen*, *Onaylanan*, *Reddedilen*) tohum verilerin hazırlanması.
 * [ ] **Adım 2.3: Kontrollü Test PDF Belgelerinin Hazırlanması**
   * AI analizi ve dosya yükleme testlerinde kullanılacak kontrollü test belgelerinin (`valid-cert.pdf`, `expired-cert.pdf`, `large-file-10mb.pdf`) test klasöründe yapılandırılması.
