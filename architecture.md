@@ -32,7 +32,7 @@ Proje, SAP BTP standartlarına ve bulut yerel (cloud-native) mimariye uygun olar
                                        ▼                                                ▼
                         ┌──────────────────────────────┐                ┌──────────────────────────────┐
                         │      Veritabanı Katmanı      │                │       BTP Destination        │
-                        │    (HANA Cloud / SQLite)     │                │     (gemini AI Servisi)      │
+                        │    SAP HANA (Zorunlu Hedef)  │                │     (gemini AI Servisi)      │
                         └──────────────────────────────┘                └──────────────────────────────┘
 ```
 
@@ -61,7 +61,9 @@ Proje, SAP BTP standartlarına ve bulut yerel (cloud-native) mimariye uygun olar
 8. **BTP Destination Servisi:**
    * Bulut ortamında dış servislerin (AI / Gemini) bağlantı adreslerini ve kimlik bilgilerini güvenli bir şekilde saklayan BTP altyapı servisidir.
 9. **Veritabanı (Database):**
-   * Tedarikçi hesapları, başvuru bilgileri, alan izinleri ve PDF sertifika ikili verilerinin (`LargeBinary`) saklandığı katmandır (Localde SQLite, BTP üzerinde HANA Cloud).
+   * Tedarikçi hesapları, başvuru bilgileri, alan izinleri ve PDF sertifika ikili verilerinin (`LargeBinary`) saklandığı katmandır.
+   * **Zorunlu Hedef:** Projenin gerçek ve zorunlu hedef veritabanı **SAP HANA**'dır. BTP üzerinde HANA Cloud / HDI Container altyapısı kullanılacaktır.
+   * **Lokal Doğrulama Notu:** Faz 2'deki SQLite kullanımı yalnızca yerel sentaks ve veri doğrulama aşamasıyla sınırlıdır; sistemin hedef mimarisinde SQLite bulunmamaktadır.
 
 ---
 

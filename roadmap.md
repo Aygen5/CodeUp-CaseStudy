@@ -39,8 +39,8 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
   * Gerçekçi uluslararası ve Alman firma isimleri, geçerli formatta vergi numaraları, adresleri ve farklı statülerdeki (*Bekleyen*, *Onaylanan*, *Reddedilen*) tohum verilerin hazırlanması.
 * [x] **Adım 2.3: Kontrollü Test PDF Belgelerinin Hazırlanması**
   * AI analizi ve dosya yükleme testlerinde kullanılacak kontrollü test belgelerinin (`valid-cert.pdf`, `expired-cert.pdf`, `large-file-10mb.pdf`) test klasöründe yapılandırılması.
-* [x] **Adım 2.4: Yerel Veritabanının Başlatılması**
-  * `cds deploy --to sqlite` ile yerel veritabanının ayağa kaldırılması ve verilerin eksiksiz yüklendiğinin doğrulanması.
+* [x] **Adım 2.4: Yerel Doğrulama ve Sentaks/Tohum Veri Testi (SQLite)**
+  * `cds deploy --to sqlite` ile şemanın ve tohum verilerin geçerliliğinin yerel ortamda doğrulanması (Projenin zorunlu hedef veritabanı SAP HANA olup, bu adım yalnızca Faz 2 sentaks ve veri bütünlüğü testi amacıyla işletilmiştir).
 
 ---
 
@@ -136,6 +136,9 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
 * [ ] **Adım 7.3: BTP Hibrit Bağlantı ve Rol Testi**
   * `cds bind` ile BTP XSUAA servisi ve Destination servisinin yerel Approuter'a bağlanması.
   * BTP Cockpit üzerinden `codeup Approval` rol koleksiyonu atama prosedürünün manuel uygulanması ve korumalı panele erişim testi.
+* [ ] **Adım 7.4: SAP HANA Cloud Veritabanı Entegrasyonu ve Dağıtımı**
+  * Projenin zorunlu hedef veritabanı olan SAP HANA Cloud için persistence bağlantısının (`@cap-js/hana`, HDI Container service binding) yapılandırılması.
+  * Faz 2'de hazırlanan veri modelinin ve 12+12 kurumsal tohum verisinin SAP HANA üzerine dağıtılması (`cds deploy --to hana`).
 
 ---
 

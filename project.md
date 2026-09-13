@@ -38,7 +38,11 @@ Sistem; CAP backend, Approuter, yerel Fiori Launchpad ve dış servis entegrasyo
                                     └─────────────────────────┘
 ```
 
-### Port Yapılandırması:
+### Port ve Veritabanı Yapılandırması:
+* **Zorunlu Hedef Veritabanı (SAP HANA):**
+  * Bu projenin nihai ve zorunlu hedef veritabanı **SAP HANA**'dır.
+  * Veri modelleri, persistence, sorgular ve kurumsal tohum verileri bütünüyle SAP HANA uyumluluğu esas alınarak geliştirilir.
+  * Faz 2 kapsamında gerçekleştirilen `cds deploy --to sqlite` işlemi, yalnızca yerel geliştirme ortamında şema sentaksı ve tohum veri bütünlüğünü test etmek amacıyla uygulanmış bir ara doğrulama adımıdır; projenin hedef veritabanı kesinlikle SQLite değildir.
 * **`localhost:4004` (CAP Backend):**
   * SAP Cloud Application Programming Model (Node.js) üzerinde koşan OData V4 servis katmanıdır.
   * Veritabanı modellerini (`schema.cds`), OData V4 servis uçlarını (`service.cds`), özel iş mantıklarını (custom handler'lar), dosya akışını (streaming) ve veri doğrulama kurallarını barındırır.

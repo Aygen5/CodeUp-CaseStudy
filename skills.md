@@ -30,8 +30,9 @@ Bu doküman, **CodeUp Supplier Management** projesinde Antigravity tarafından k
 * **Çift Katmanlı Validasyon (Dual-Layer Validation):**
   * Doğrulama asla sadece kullanıcı arayüzüne (UI) bırakılamaz.
   * Zorunlu alan kontrolleri (Firma Adı, İlgili Kişi, Sertifika), e-posta formatı ve benzersizlik (unique email) denetimi, dosya türünün yalnızca PDF olması ve dosya boyutunun maksimum 10 MB olması backend servis katmanında da kesin olarak denetlenmeli ve ihlal durumunda anlamlı OData hata mesajları (`req.error(...)`) döndürülmelidir.
-* **Gerçek Veri Bütünlüğü:**
-  * Sahte (mock/placeholder) veriler yerine, SQLite/HANA veritabanında saklanan gerçek veri yapılarıyla çalışılmalıdır. Test ve demo gereksinimi için sistem `db/data` altına yerleştirilecek en az 10 farklı kayıt içeren gerçekçi CSV seed verileriyle beslenmelidir.
+* **Gerçek Veri Bütünlüğü ve SAP HANA Zorunluluğu:**
+  * Sahte (mock/placeholder) veriler yerine, doğrudan veritabanında saklanan gerçek veri yapılarıyla çalışılmalıdır.
+  * **Hedef Veritabanı:** Bu projenin tek ve zorunlu hedef veritabanı **SAP HANA**'dır. SQLite yalnızca Faz 2 lokal doğrulama aşamasında sentaks ve veri bütünlüğü testi için kullanılmıştır. Bundan sonraki veri katmanı, sorgu, persistence veya deployment kararlarında SQLite asla hedef olarak alınamaz; tüm geliştirmeler SAP HANA uyumlu yürütülecektir.
 
 ---
 
