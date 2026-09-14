@@ -84,6 +84,27 @@ sap.ui.define([
             });
             this.getView().setModel(oDetailModel, "detailModel");
 
+            var oRejectModel = new JSONModel({
+                busy: false,
+                submissionId: "",
+                companyName: "",
+                reason: "",
+                fields: {
+                    companyName: false,
+                    contactPerson: false,
+                    phone: false,
+                    country: false,
+                    taxId: false,
+                    website: false,
+                    address: false,
+                    notes: false,
+                    category: false,
+                    certificate: false
+                },
+                canSubmit: false
+            });
+            this.getView().setModel(oRejectModel, "rejectModel");
+
             // Initial load of submissions directly from real CAP ApprovalService
             this._loadSubmissions();
         },
@@ -748,6 +769,227 @@ sap.ui.define([
                 }.bind(this), 0);
             } catch (e) {
                 // Ignore network errors on background reload
+            }
+        },
+
+        /**
+         * Opens the rejection dialog and resets the rejectModel with empty fields.
+         */
+        onRejectPress: async function () {
+            var oView = this.getView();
+            var oDetailModel = oView.getModel("detailModel");
+            var oRejectModel = oView.getModel("rejectModel");
+            var sId = oDetailModel.getProperty("/ID");
+            var sCompany = oDetailModel.getProperty("/companyName") || "";
+
+            if (!sId) {
+                return;
+            }
+
+            oRejectModel.setData({
+                busy: false,
+                submissionId: sId,
+                companyName: sCompany,
+                reason: "",
+                fields: {
+                    companyName: false,
+                    contactPerson: false,
+                    phone: false,
+                    country: false,
+                    taxId: false,
+                    website: false,
+                    address: false,
+                    notes: false,
+                    category: false,
+                    certificate: false
+                },
+                canSubmit: false
+            });
+
+            this._validateRejectForm();
+
+            if (!this._pRejectDialog) {
+                this._pRejectDialog = Fragment.load({
+                    id: oView.getId(),
+                    name: "codeup.supplier.approvals.view.fragment.RejectDialog",
+                    controller: this
+                }).then(function (oDialog) {
+                    oView.addDependent(oDialog);
+                    return oDialog;
+                });
+            }
+
+            var oDialog = await this._pRejectDialog;
+            oDialog.open();
+        },
+
+        /**
+         * Live change listener for the rejection reason text area.
+         */
+        onRejectReasonLiveChange: function () {
+            this._validateRejectForm();
+        },
+
+        /**
+         * Selection change listener for editable fields checkboxes.
+         */
+        onRejectFieldSelect: function () {
+            this._validateRejectForm();
+        },
+
+        /**
+         * Selects only the certificate field and unchecks all others.
+         */
+        onSelectCertOnly: function () {
+            var oRejectModel = this.getView().getModel("rejectModel");
+            oRejectModel.setProperty("/fields", {
+                companyName: false,
+                contactPerson: false,
+                phone: false,
+                country: false,
+                taxId: false,
+                website: false,
+                address: false,
+                notes: false,
+                category: false,
+                certificate: true
+            });
+            this._validateRejectForm();
+        },
+
+        /**
+         * Unchecks all editable fields.
+         */
+        onClearAllFields: function () {
+            var oRejectModel = this.getView().getModel("rejectModel");
+            oRejectModel.setProperty("/fields", {
+                companyName: false,
+                contactPerson: false,
+                phone: false,
+                country: false,
+                taxId: false,
+                website: false,
+                address: false,
+                notes: false,
+                category: false,
+                certificate: false
+            });
+            this._validateRejectForm();
+        },
+
+        /**
+         * Validates the rejection form: reason must not be whitespace-only,
+         * and at least one editable field must be selected.
+         * @returns {boolean} Whether the form is valid to submit
+         */
+        _validateRejectForm: function () {
+            var oRejectModel = this.getView().getModel("rejectModel");
+            if (!oRejectModel) {
+                return false;
+            }
+
+            var sReason = (oRejectModel.getProperty("/reason") || "").trim();
+            var oFields = oRejectModel.getProperty("/fields") || {};
+            var bHasField = Object.keys(oFields).some(function (k) {
+                return oFields[k] === true;
+            });
+
+            var bCanSubmit = sReason.length > 0 && bHasField;
+            oRejectModel.setProperty("/canSubmit", bCanSubmit);
+            return bCanSubmit;
+        },
+
+        /**
+         * Submits the rejection to the real CAP ApprovalService bound action.
+         */
+        onConfirmReject: async function () {
+            var oBundle = this.getResourceBundle();
+            var oRejectModel = this.getView().getModel("rejectModel");
+            var oDetailModel = this.getView().getModel("detailModel");
+            var sId = oRejectModel.getProperty("/submissionId");
+
+            if (oRejectModel.getProperty("/busy") || oDetailModel.getProperty("/actionBusy")) {
+                return;
+            }
+
+            var sReason = (oRejectModel.getProperty("/reason") || "").trim();
+            if (!sReason) {
+                MessageBox.warning(oBundle.getText("errRejectReasonRequired"));
+                return;
+            }
+
+            var oFields = oRejectModel.getProperty("/fields") || {};
+            var aValidWhitelist = [
+                "companyName", "contactPerson", "phone", "country",
+                "taxId", "website", "address", "notes", "category", "certificate"
+            ];
+            var aSelected = [];
+            aValidWhitelist.forEach(function (k) {
+                if (oFields[k] === true) {
+                    aSelected.push(k);
+                }
+            });
+
+            if (aSelected.length === 0) {
+                MessageBox.warning(oBundle.getText("errEditableFieldsRequired"));
+                return;
+            }
+
+            var sEditableFields = aSelected.join(",");
+
+            oRejectModel.setProperty("/busy", true);
+            oDetailModel.setProperty("/actionBusy", true);
+
+            try {
+                var oHeaders = Object.assign({
+                    "Content-Type": "application/json"
+                }, this._getAuthHeaders());
+
+                // Call real CAP ApprovalService bound reject action
+                var oResponse = await fetch("/odata/v4/approval/Submissions(" + sId + ")/reject", {
+                    method: "POST",
+                    headers: oHeaders,
+                    body: JSON.stringify({
+                        rejectionReason: sReason,
+                        editableFields: sEditableFields
+                    })
+                });
+
+                if (!oResponse.ok) {
+                    var oErrorData = await oResponse.json().catch(function () { return null; });
+                    var sBackendMsg = (oErrorData && oErrorData.error && oErrorData.error.message)
+                        ? oErrorData.error.message
+                        : oBundle.getText("errRejectFailed");
+                    MessageBox.error(sBackendMsg);
+                    return;
+                }
+
+                // Close reject dialog
+                this.onCloseRejectDialog();
+
+                // Reload submission directly from backend to guarantee truth in UI
+                await this._reloadSubmission(sId);
+
+                // Refresh table list & counts in main view
+                await this._loadSubmissions();
+
+                MessageToast.show(oBundle.getText("msgRejectSuccess"));
+            } catch (oErr) {
+                MessageBox.error(oBundle.getText("errRejectFailed") + " (" + oErr.message + ")");
+            } finally {
+                oRejectModel.setProperty("/busy", false);
+                oDetailModel.setProperty("/actionBusy", false);
+            }
+        },
+
+        /**
+         * Closes the reject dialog.
+         */
+        onCloseRejectDialog: function () {
+            if (this._pRejectDialog) {
+                this._pRejectDialog.then(function (oDialog) {
+                    oDialog.close();
+                });
             }
         }
     });

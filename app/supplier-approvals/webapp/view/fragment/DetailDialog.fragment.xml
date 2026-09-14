@@ -175,6 +175,17 @@
                 busy="{detailModel>/actionBusy}"
                 enabled="{= !${detailModel>/actionBusy} }" />
 
+            <!-- Reddet Butonu (Sadece Pending veya InReview durumlarında) -->
+            <Button
+                id="btnReject"
+                text="{i18n>btnReject}"
+                type="Reject"
+                icon="sap-icon://decline"
+                press=".onRejectPress"
+                visible="{= ${detailModel>/status} === 'Pending' || ${detailModel>/status} === 'InReview' }"
+                busy="{detailModel>/actionBusy}"
+                enabled="{= !${detailModel>/actionBusy} }" />
+
             <!-- Kapat Butonu -->
             <Button
                 id="btnDetailClose"

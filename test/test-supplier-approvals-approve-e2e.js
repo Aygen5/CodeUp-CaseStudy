@@ -69,11 +69,11 @@ async function main() {
   console.log('  [OK] DetailDialog.fragment.xml btnApprove yapılandırması Fiori standartlarına tam uygun.');
   passedTests++;
 
-  // 1.3 Scope Boundary Denetimi (6.4-A Sınırları: Reject veya AI butonları bu adımda olmamalı)
-  if (fragmentXml.includes('id="btnReject"') || fragmentXml.includes('id="pnlAiReport"')) {
-    throw new Error('KURAL İHLALİ: 6.4-A kapsamında Reject veya AI paneli yer almamalıdır!');
+  // 1.3 Scope Boundary Denetimi (AI paneli bu aşamada yer almamalıdır)
+  if (fragmentXml.includes('id="pnlAiReport"')) {
+    throw new Error('KURAL İHLALİ: 6.4-B kapsamında AI paneli henüz yer almamalıdır!');
   }
-  console.log('  [OK] 6.4-A Kapsam Sınırı Doğrulandı: Yalnızca Manuel Onay akışı mevcut, Reject/AI izole.');
+  console.log('  [OK] 6.4-B Kapsam Sınırı Doğrulandı: AI paneli izole tutuldu.');
   passedTests++;
 
   // 1.4 Main.controller.js Yapılandırması

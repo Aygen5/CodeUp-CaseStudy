@@ -1,0 +1,126 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:layout="sap.ui.layout">
+    <Dialog
+        id="rejectDialog"
+        title="{= ${rejectModel>/companyName} ? (${i18n>rejectDialogTitle} + ' - ' + ${rejectModel>/companyName}) : ${i18n>rejectDialogTitle} }"
+        contentWidth="650px"
+        stretch="{device>/system/phone}">
+        <content>
+            <VBox class="sapUiResponsiveMargin">
+                <MessageStrip
+                    text="{i18n>rejectDialogDesc}"
+                    type="Information"
+                    showIcon="true"
+                    showCloseButton="false"
+                    class="sapUiSmallMarginBottom" />
+
+                <!-- Karar Notu / Red Gerekçesi (Zorunlu) -->
+                <Label
+                    text="{i18n>rejectReasonLabel}"
+                    labelFor="taRejectionReason"
+                    required="true"
+                    class="sapUiTinyMarginBottom" />
+                <TextArea
+                    id="taRejectionReason"
+                    value="{rejectModel>/reason}"
+                    liveChange=".onRejectReasonLiveChange"
+                    width="100%"
+                    rows="4"
+                    placeholder="{i18n>rejectReasonPlaceholder}"
+                    class="sapUiSmallMarginBottom" />
+
+                <!-- Düzenlenebilir Alanlar Başlığı ve Hızlı Seçim Butonları -->
+                <HBox alignItems="Center" justifyContent="SpaceBetween" wrap="Wrap" class="sapUiSmallMarginTop sapUiTinyMarginBottom">
+                    <Label
+                        text="{i18n>rejectEditableFieldsLabel}"
+                        required="true"
+                        design="Bold" />
+                    <HBox>
+                        <Button
+                            id="btnSelectCertOnly"
+                            text="{i18n>btnSelectCertOnly}"
+                            type="Transparent"
+                            press=".onSelectCertOnly"
+                            class="sapUiTinyMarginEnd" />
+                        <Button
+                            id="btnClearAllFields"
+                            text="{i18n>btnClearAllFields}"
+                            type="Transparent"
+                            press=".onClearAllFields" />
+                    </HBox>
+                </HBox>
+
+                <!-- Backend VALID_EDITABLE_FIELDS Whitelist ile %100 Uyumlu 10 Alan -->
+                <layout:Grid defaultSpan="XL6 L6 M6 S12" class="sapUiTinyMarginTop">
+                    <CheckBox
+                        id="chkFieldCertificate"
+                        text="{i18n>fieldCertificate}"
+                        selected="{rejectModel>/fields/certificate}"
+                        select=".onRejectFieldSelect" />
+                    <CheckBox
+                        id="chkFieldTaxId"
+                        text="{i18n>fieldTaxId}"
+                        selected="{rejectModel>/fields/taxId}"
+                        select=".onRejectFieldSelect" />
+                    <CheckBox
+                        id="chkFieldPhone"
+                        text="{i18n>fieldPhone}"
+                        selected="{rejectModel>/fields/phone}"
+                        select=".onRejectFieldSelect" />
+                    <CheckBox
+                        id="chkFieldAddress"
+                        text="{i18n>fieldAddress}"
+                        selected="{rejectModel>/fields/address}"
+                        select=".onRejectFieldSelect" />
+                    <CheckBox
+                        id="chkFieldCategory"
+                        text="{i18n>fieldCategory}"
+                        selected="{rejectModel>/fields/category}"
+                        select=".onRejectFieldSelect" />
+                    <CheckBox
+                        id="chkFieldCountry"
+                        text="{i18n>fieldCountry}"
+                        selected="{rejectModel>/fields/country}"
+                        select=".onRejectFieldSelect" />
+                    <CheckBox
+                        id="chkFieldWebsite"
+                        text="{i18n>fieldWebsite}"
+                        selected="{rejectModel>/fields/website}"
+                        select=".onRejectFieldSelect" />
+                    <CheckBox
+                        id="chkFieldContactPerson"
+                        text="{i18n>fieldContactPerson}"
+                        selected="{rejectModel>/fields/contactPerson}"
+                        select=".onRejectFieldSelect" />
+                    <CheckBox
+                        id="chkFieldCompanyName"
+                        text="{i18n>fieldCompanyName}"
+                        selected="{rejectModel>/fields/companyName}"
+                        select=".onRejectFieldSelect" />
+                    <CheckBox
+                        id="chkFieldNotes"
+                        text="{i18n>fieldNotes}"
+                        selected="{rejectModel>/fields/notes}"
+                        select=".onRejectFieldSelect" />
+                </layout:Grid>
+            </VBox>
+        </content>
+        <buttons>
+            <Button
+                id="btnConfirmReject"
+                text="{i18n>btnConfirmReject}"
+                type="Reject"
+                icon="sap-icon://decline"
+                press=".onConfirmReject"
+                enabled="{rejectModel>/canSubmit}"
+                busy="{rejectModel>/busy}" />
+            <Button
+                id="btnCancelReject"
+                text="{i18n>btnCancel}"
+                press=".onCloseRejectDialog"
+                enabled="{= !${rejectModel>/busy} }" />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition>
