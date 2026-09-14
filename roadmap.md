@@ -47,7 +47,7 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
 ## 📌 FAZ 3: Güvenlik Mimarisi Tasarımı ve Yetkilendirme Modeli (Security Design)
 *Bu fazda kodlama öncesinde yetkilendirme sözleşmeleri ve güvenlik kuralları netleştirilir.*
 
-* [ ] **Adım 3.1: CAP Yetkilendirme Sınırlarının Belirlenmesi**
+* [x] **Adım 3.1: CAP Yetkilendirme Sınırlarının Belirlenmesi**
   * `PublicService` (Dış tedarikçi işlemleri) ile `ApprovalService` (`@requires: 'Approval'`) arasındaki yetki sınırlarının deklaratif tasarımı.
 * [ ] **Adım 3.2: `xs-security.json` Deklarasyonunun Hazırlanması**
   * BTP XSUAA için `Approval` scope, `Approval` role template ve `codeup Approval` role collection tanımlarının oluşturulması.

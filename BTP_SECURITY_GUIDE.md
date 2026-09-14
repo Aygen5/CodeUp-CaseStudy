@@ -143,36 +143,135 @@ Bu işlem tamamlandığında kullanıcının bir sonraki oturumunda alacağı JW
 
 ---
 
-## 8. CAP Seviyesinde Rol Bazlı Yetkilendirme (RBAC)
+## 8. CAP Seviyesinde Rol Bazlı Yetkilendirme (RBAC) ve Servis Güvenlik Sınırları (Adım 3.1)
 
-Approuter ilk güvenlik hattıdır; ancak tek başına yeterli değildir. İkinci ve asıl veri koruma hattı CAP backend katmanıdır.
+Approuter ilk ağ kapısı ve ters proxy hattıdır; ancak tek başına yeterli değildir. İkinci ve asıl veri koruma hattı CAP backend katmanıdır. CAP seviyesinde yetkilendirme; iki ayrı servis sınırı (`PublicService` ve `ApprovalService`), rol bazlı deklaratif anotasyonlar (`@requires` / `@restrict`) ve backend iş mantığında zorunlu kılınan veri mülkiyeti izolasyonu (Supplier Ownership) ile sağlanır.
 
-### A. `@requires` Anotasyonu (Servis ve Aksiyon Düzeyi)
-Bir servisin veya action'ın tamamını belirli bir role kilitlemek için kullanılır:
-```cds
-// Yalnızca BTP Approval rolüne sahip kullanıcılar erişebilir
-service ApprovalService @(requires: 'Approval') {
-  entity Submissions as projection on db.Submissions;
-  action analyzeCertificate(submissionId: UUID) returns AnalysisResult;
-}
+### 8.1. İki Güvenlik Alanı ve Domain Sınırları
+
+Veri modelimizdeki `Suppliers` ve `Submissions` varlıkları (bakınız: [`db/schema.cds`](file:///c:/Projects/CodeUp-CaseStudy/db/schema.cds)), iki tamamen farklı kullanıcı kitlesine ve güvenlik etki alanına (security domain) hitap eder:
+
+1. **Dış Tedarikçi Alanı (External Supplier Domain):**
+   * **Aktör:** Kurum dışındaki bağımsız tedarikçi adayları.
+   * **Kimlik Doğrulama:** SAP BTP XSUAA kullanıcısı **değildir**. Kimlikleri doğrudan veritabanındaki `Suppliers` tablosunda saklanan e-posta ve `bcryptjs` ile hash'lenmiş parola üzerinden doğrulanır.
+   * **Yetki Kapsamı:** Tedarikçi yalnızca kendi hesabını yönetebilir, yalnızca kendi başvurusunu oluşturabilir, kendi başvurusunun durumunu/sürecini takip edebilir ve reddedilmişse yalnızca izin verilen alanları güncelleyebilir.
+   * **Temel Kısıt:** Bir tedarikçi, başka bir tedarikçinin varlığından veya başvuru detaylarından kesinlikle haberdar olamaz (`Supplier A` $\not\to$ `Supplier B`).
+
+2. **İç Onaycı Alanı (Internal Approver Domain):**
+   * **Aktör:** Kurum içindeki satınalma/onay yöneticileri.
+   * **Kimlik Doğrulama:** SAP BTP XSUAA üzerinden kimliği doğrulanmış kurumsal kullanıcılar.
+   * **Yetki Kapsamı:** Kurumsal onay havuzundaki tüm tedarikçi başvurularını listeleyebilir, arayabilir, filtreleyebilir, detaylarını ve PDF sertifikalarını inceleyebilir; başvuruyu onaylayabilir (`approve`), gerekçe ve alan seçimi belirterek reddedebilir (`reject`) ve Gemini AI sertifika analizi (`analyzeCertificate`) çalıştırabilir.
+
+---
+
+### 8.2. Servis Sınırları: `PublicService` vs `ApprovalService`
+
+Bu iki farklı güvenlik alanı mimaride iki ayrı CAP OData V4 servisi olarak izole edilir:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                               CAP Backend (localhost:4004)                             │
+├───────────────────────────────────────────┬────────────────────────────────────────────┤
+│         PublicService (/odata/v4/public)  │     ApprovalService (/odata/v4/approval)   │
+├───────────────────────────────────────────┼────────────────────────────────────────────┤
+│ • Ağ Seviyesi: authenticationType: none   │ • Ağ Seviyesi: authenticationType: xsuaa   │
+│ • Servis Seviyesi: Public/Açık            │ • Servis Seviyesi: @requires: 'Approval'   │
+│ • Güvenlik Modeli: Supplier Ownership    │ • Güvenlik Modeli: BTP XSUAA RBAC          │
+│ • Kapsam:                                 │ • Kapsam:                                  │
+│   - register (Action)                     │   - Submissions (Tüm Başvuruları Okuma)    │
+│   - login (Action)                        │   - approve (Action)                       │
+│   - getMySubmission (Function/Action)     │   - reject (Action)                        │
+│   - createSubmission (Action)             │   - analyzeCertificate (AI Action)         │
+│   - reApplySubmission (Action)            │                                            │
+└───────────────────────────────────────────┴────────────────────────────────────────────┘
 ```
 
-### B. `@restrict` Anotasyonu (Varlık ve Olay Düzeyi)
-Varlıklar üzerinde daha granüler (READ, WRITE, UPDATE vb.) yetki kısıtlamaları tanımlamak için kullanılır:
-```cds
-// Public tedarikçi servisi: Herkese açık uçlar
-service PublicService {
-  @restrict: [{ grant: '*', to: 'any' }]
-  entity Suppliers as projection on db.Suppliers;
+#### A. `PublicService` Sınırı ve "Public" Yanılgısı
+* **Yol (Path):** `/odata/v4/public`
+* **Ağ Seviyesi:** Dış tedarikçilerin BTP hesabına sahip olmaması sebebiyle Approuter üzerinde `authenticationType: none` olarak işaretlenir.
+* > [!CAUTION]
+  > **Kritik İlke — Public $\neq$ Herkese Açık Veri:**
+  > Bir servisin ağ kapısında `none` veya genel erişime açık olması, o servisteki tüm verilerin herkes tarafından sorgulanabileceği anlamına **kesinlikle gelmez**.
+  > `PublicService` uçlarında tedarikçilerin tüm başvuruları tarayabileceği kontrolsüz bir OData entityseti (`SELECT * FROM Submissions`) **kesinlikle dışarıya ifşa edilmez**.
+  > Başvuru okuma ve güncelleme işlemleri yalnızca oturum açmış tedarikçinin doğrulanmış kimliği ile kısıtlanan kontrollü operasyonlar (`getMySubmission`, `createSubmission`, `reApplySubmission`) üzerinden sunulur.
 
-  @restrict: [{ grant: ['READ', 'CREATE'], to: 'any' }]
-  entity Applications as projection on db.Applications;
-}
-```
+#### B. `ApprovalService` Sınırı
+* **Yol (Path):** `/odata/v4/approval`
+* **Ağ Seviyesi:** Approuter üzerinde `authenticationType: xsuaa` ve `scope: Approval` denetimi.
+* **CAP Seviyesi:** Servis tanımında kökten deklaratif anotasyon:
+  ```cds
+  service ApprovalService @(requires: 'Approval') { ... }
+  ```
+* **Kapsam:** BTP kullanıcısı oturum açmış olsa bile token'ında `Approval` scope'u (BTP Cockpit'teki `codeup Approval` rol koleksiyonu) bulunmuyorsa, CAP backend tüm istekleri anında **`403 Forbidden`** hatasıyla keser.
 
-### C. Service-Level vs. Entity/Action-Level Yetkilendirme:
-* **Service-Level:** Tüm servis kökünü korur. Bir kullanıcı servise giremiyorsa içindeki hiçbir entity veya action'a erişemez. Bu projede `ApprovalService` kökten `@requires: 'Approval'` ile korunur.
-* **Entity/Action-Level:** Servis içindeki özel işlemleri (örn. AI analiz action'ı) izole etmek için kullanılır.
+---
+
+### 8.3. Kapsamlı Erişim Matrisi (Access Matrix)
+
+Aşağıdaki matris, sistemdeki tüm aktörlerin hangi kaynak ve işlemlere erişebileceğini kesin olarak tanımlar:
+
+| Kaynak / İşlem | Unauthenticated (Giriş Yapmamış) | Authenticated Supplier (Giriş Yapmış Tedarikçi) | Authenticated User (Approval Rolü Olmayan) | Approver (`Approval` Rolüne Sahip) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Kayıt Olma (`register`)** | ✅ İzin Var (200/201) | ⚠️ Gereksiz (Zaten Kayıtlı) | ❌ İzin Yok | ❌ İzin Yok |
+| **Giriş Yapma (`login`)** | ✅ İzin Var (200) | ✅ İzin Var | ❌ İzin Yok | ❌ İzin Yok |
+| **Kendi Başvurusunu Okuma (`getMySubmission`)** | ❌ 401 Unauthorized | ✅ İzin Var (Kendi Verisi) | ❌ İzin Yok | ❌ Kendi tedarikçi hesabı yoksa N/A |
+| **Kendi Başvurusunu Oluşturma (`createSubmission`)** | ❌ 401 Unauthorized | ✅ İzin Var (İlk başvuru için) | ❌ İzin Yok | ❌ İzin Yok |
+| **Kendi Başvurusunu Güncelleme (`reApplySubmission`)** | ❌ 401 Unauthorized | 🔶 Koşullu (Yalnızca `Rejected` ise ve onaycının izin verdiği alanlar) | ❌ İzin Yok | ❌ İzin Yok |
+| **Başka Tedarikçinin Başvurusunu Okuma/Değiştirme** | ⛔ **KESİNLİKLE YASAK (403/Denied)** | ⛔ **KESİNLİKLE YASAK (403/Denied)** | ⛔ **KESİNLİKLE YASAK (403/Denied)** | ⛔ **YASAK (Onaycı bile doğrudan başvuru sahibinin yerine veri değiştiremez)** |
+| **Tüm Başvuruları Listeleme / Arama** | ❌ 401 / 403 Forbidden | ❌ 403 Forbidden | ❌ 403 Forbidden | ✅ İzin Var (Tüm havuz) |
+| **Başvuru Detayı ve PDF İnceleme** | ❌ 401 / 403 Forbidden | ❌ Başkası için 403 | ❌ 403 Forbidden | ✅ İzin Var |
+| **Başvuru Onaylama (`approve`)** | ❌ 401 / 403 Forbidden | ❌ 403 Forbidden | ❌ 403 Forbidden | ✅ İzin Var |
+| **Başvuru Reddetme (`reject`)** | ❌ 401 / 403 Forbidden | ❌ 403 Forbidden | ❌ 403 Forbidden | ✅ İzin Var |
+| **AI Sertifika Analizi (`analyzeCertificate`)** | ❌ 401 / 403 Forbidden | ❌ 403 Forbidden | ❌ 403 Forbidden | ✅ İzin Var (Destination üzerinden) |
+
+> [!IMPORTANT]
+> **Kritik İzolasyon Kuralı:**
+> `Supplier A` $\not\to$ `Supplier B'nin Başvurusu`:
+> Tedarikçi A, API parametresine başka bir başvuru ID'si yazsa, doğrudan URL'ye sorgu atsa veya veri tabanını taramaya çalışsa dahi `Supplier B`'nin başvurusuna **kesinlikle erişemez ve güncelleyemez**.
+
+---
+
+### 8.4. `@requires` ve `@restrict` Ayrımı ve Tasarım Kararı
+
+CAP modelinde yetkilendirme iki ana anotasyon ile sağlanır. Bu projede bunların rolleri şu şekilde belirlenmiştir:
+
+| Özellik | `@requires` | `@restrict` |
+| :--- | :--- | :--- |
+| **Kapsam Düzeyi** | Kaba taneli (Coarse-grained): Servis veya Action geneli | İnce taneli (Fine-grained): Varlık (Entity) ve Olay (READ, CREATE, UPDATE, DELETE) bazlı |
+| **Kullanım Amacı** | *"Bu servise/aksiyona kim girebilir?"* sorusunu yanıtlar. Kullanıcının belirli bir role/scope'a sahip olup olmadığını sorgular. | *"Bu tabloda kim, hangi şartla (where), hangi işlemi (grant) yapabilir?"* sorusunu yanıtlar. |
+| **Projedeki Rolü** | **`ApprovalService`'in tamamında kök düzeyde kullanılır:**<br>`@(requires: 'Approval')` | Gelecekte servis içi varlık projeksiyonlarında operasyon kısıtı (örn. `grant: ['READ'], to: 'Approval'`) gerekirse kullanılır. |
+
+#### Deklaratif Tasarım Kararı:
+1. **`ApprovalService` İçin `@requires: 'Approval'`:**
+   * Tüm iç onay servisinin köküne `@requires: 'Approval'` konulur. Bu kural, XSUAA JWT token doğrulamasıyla doğrudan eşleşir. `Approval` scope'u taşımayan her istek anında servis girişinde engellenir.
+2. **`PublicService` İçin Durum:**
+   * Dış tedarikçiler BTP kullanıcısı olmadığı için XSUAA tabanlı `@requires` doğrudan `PublicService` üzerinde işletilemez (bu servise XSUAA rolü zorunluluğu konulursa tedarikçiler erişemez).
+   * Dolayısıyla `PublicService` üzerindeki veri güvenliği deklaratif BTP rolü ile değil, **aşağıda açıklanan Tedarikçi Veri Sahipliği (Supplier Ownership) mimarisiyle** garanti edilir.
+   * *Not:* Bu tasarım kararlarının kesin CDS sözdizimi ve handler detayları, Faz 4 backend implementasyonunda canlı testlerle doğrulanacaktır.
+
+---
+
+### 8.5. Tedarikçi Veri Sahipliği ve Mülkiyet İzolasyonu (Supplier Ownership Isolation)
+
+`@requires: 'Approval'` anotasyonu yalnızca iç onaycı alanını korur. Dış tedarikçilerin birbirlerinin verisine erişmesini engellemek için şu 4 boyutlu veri sahipliği mimarisi uygulanır:
+
+1. **Uygulanacağı Katman:**
+   * **CAP Service / Custom Handler Katmanı (`srv/public-service.js`).**
+   * Güvenlik kontrolü arayüze veya URL parametrelerine bırakılamaz; doğrudan backend handler katmanında zorunlu kılınır.
+
+2. **Kullanılacak Kimlik Bilgisi:**
+   * Tedarikçi `login` action'ı ile oturum açtığında, backend tarafından doğrulanmış bir **tedarikçi oturum bağlamı / oturum belirteci (session token)** üretilir.
+   * Bu belirteç güvenli bir şekilde `supplier.id` bilgisini taşır. İstemci sonraki her istekte bu oturum bilgisini iletir.
+   * Tedarikçinin gönderdiği hiçbir parametreye güvenilmez; kimlik bilgisi daima doğrulanmış oturum bağlamından (`req.supplier.id`) okunur.
+
+3. **Filtreleme ve Yetki Mantığı:**
+   * **Okuma (`getMySubmission`):** Tedarikçi bir ID parametresi vererek başvuru arayamaz. Backend doğrudan `SELECT FROM Submissions WHERE supplier_ID = req.supplier.id` sorgusu çalıştırır. Tedarikçinin başka bir kaydı görmesi matematiksel olarak imkansızdır.
+   * **Yeni Başvuru (`createSubmission`):** Form gönderildiğinde `supplier_ID` alanı istemciden gelen JSON gövdesinden değil, backend oturumundan (`req.supplier.id`) zorunlu olarak atanır. Tedarikçi başkası adına kayıt oluşturamaz.
+   * **Yeniden Başvuru (`reApplySubmission`):** Güncellenmek istenen başvuru kaydının veritabanındaki `supplier_ID` değeri ile oturumdaki `req.supplier.id` eşleşiyor mu kontrol edilir. Eşleşmiyorsa işlem derhal iptal edilir (`403 Forbidden`). Eşleşiyorsa yalnızca onaycının izin verdiği `editableFields` alanlarının güncellenmesine izin verilir.
+
+4. **Servis Sınırındaki Konumu:**
+   * Bu mülkiyet mantığı **`PublicService`** sınırında işletilir.
+   * `ApprovalService` ise tüm başvuruları görme yetkisine sahip tek merkezdir ve zaten XSUAA `Approval` rolüyle kilitlenmiştir.
 
 ---
 
@@ -236,6 +335,7 @@ Uygulama cloud'a deploy edilmeyecek, yerel geliştirme ortamında (localhost) ç
 2. **Koleksiyon Adı:** BTP üzerindeki rol koleksiyonunun adı şartnameye tam uygun olarak **`codeup Approval`** olacaktır.
 3. **Katmanlı Doğrulama:** Zorunlu alanlar, benzersiz e-posta, dosya türü (PDF) ve boyut kısıtı (10 MB) hem frontend hem backend katmanında kontrol edilecektir.
 4. **Credential Yasağı:** Kod reposunda hiçbir şifre, secret veya API anahtarı barındırılmayacaktır.
+5. **Tedarikçi Mülkiyet İzolasyonu (Supplier Data Ownership):** Bir tedarikçi asla başka bir tedarikçinin başvurusunu göremez veya güncelleyemez (`Supplier A` $\not\to$ `Supplier B`). Veri sorguları backend katmanında oturumdaki tedarikçi kimliği (`supplier_ID = req.supplier.id`) ile filtrelenir.
 
 ---
 *Bu rehber, projenin güvenlik sınırlarını ve BTP entegrasyon kurallarını kesinleştiren temel referans dokümandır.*
