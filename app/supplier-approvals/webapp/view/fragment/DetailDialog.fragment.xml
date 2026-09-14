@@ -161,6 +161,70 @@
                         </VBox>
                     </VBox>
                 </Panel>
+
+                <!-- 4. Gemini AI Karar Desteği (Human-in-the-Loop) -->
+                <Panel
+                    id="pnlAiReport"
+                    headerText="{i18n>aiReportTitle}"
+                    expandable="false"
+                    visible="{detailModel>/hasAiReport}"
+                    class="sapUiSmallMarginBottom">
+                    <VBox class="sapUiSmallMargin">
+                        <!-- Human-in-the-Loop Bilgilendirme Şeridi -->
+                        <MessageStrip
+                            text="{i18n>aiHumanInTheLoopDisclaimer}"
+                            type="Information"
+                            showIcon="true"
+                            showCloseButton="false"
+                            class="sapUiSmallMarginBottom" />
+
+                        <!-- AI Analiz Sonuç Kartı / Grid -->
+                        <layout:Grid defaultSpan="XL6 L6 M6 S12">
+                            <VBox class="sapUiSmallMargin">
+                                <Label text="{i18n>aiValidityStatus}" design="Bold" />
+                                <ObjectStatus
+                                    id="txtAiValidityStatus"
+                                    text="{detailModel>/aiReport/validityStatus}"
+                                    state="{= ${detailModel>/aiReport/validityStatus} === 'Valid' ? 'Success' : 'Error' }"
+                                    class="sapUiTinyMarginBottom" />
+
+                                <Label text="{i18n>aiRecommendation}" design="Bold" />
+                                <ObjectStatus
+                                    id="txtAiRecommendation"
+                                    text="{detailModel>/aiReport/recommendation}"
+                                    state="{= ${detailModel>/aiReport/validityStatus} === 'Valid' ? 'Success' : 'Error' }"
+                                    icon="{= ${detailModel>/aiReport/validityStatus} === 'Valid' ? 'sap-icon://accept' : 'sap-icon://decline' }"
+                                    class="sapUiTinyMarginBottom" />
+
+                                <Label text="{i18n>aiReason}" design="Bold" />
+                                <Text id="txtAiReason" text="{detailModel>/aiReport/reason}" class="sapUiTinyMarginBottom" />
+                            </VBox>
+
+                            <VBox class="sapUiSmallMargin">
+                                <Label text="{i18n>aiSuggestedFields}" design="Bold" />
+                                <Text id="txtAiSuggestedFields" text="{= ${detailModel>/aiReport/suggestedFields} || '-' }" class="sapUiTinyMarginBottom" />
+
+                                <Label text="{i18n>aiFileName}" design="Bold" />
+                                <Text id="txtAiFileName" text="{detailModel>/aiReport/fileName}" class="sapUiTinyMarginBottom" />
+
+                                <Label text="{i18n>aiAnalyzedAt}" design="Bold" />
+                                <Text id="txtAiAnalyzedAt" text="{path: 'detailModel>/aiReport/analyzedAt', formatter: '.formatter.formatDateTime'}" />
+                            </VBox>
+                        </layout:Grid>
+
+                        <!-- AI Red Önerisi Durumunda Hızlı Aksiyon -->
+                        <HBox
+                            visible="{= ${detailModel>/aiReport/validityStatus} !== 'Valid' || (${detailModel>/aiReport/recommendation} &amp;&amp; ${detailModel>/aiReport/recommendation}.indexOf('Reddet') !== -1) }"
+                            class="sapUiSmallMarginTop">
+                            <Button
+                                id="btnQuickRejectWithAi"
+                                text="{i18n>btnQuickRejectWithAi}"
+                                type="Reject"
+                                icon="sap-icon://decline"
+                                press=".onRejectPress" />
+                        </HBox>
+                    </VBox>
+                </Panel>
             </VBox>
         </content>
         <buttons>
@@ -173,7 +237,7 @@
                 press=".onApprovePress"
                 visible="{= ${detailModel>/status} === 'Pending' || ${detailModel>/status} === 'InReview' }"
                 busy="{detailModel>/actionBusy}"
-                enabled="{= !${detailModel>/actionBusy} }" />
+                enabled="{= !${detailModel>/actionBusy} &amp;&amp; !${detailModel>/aiBusy} }" />
 
             <!-- Reddet Butonu (Sadece Pending veya InReview durumlarında) -->
             <Button
@@ -184,7 +248,17 @@
                 press=".onRejectPress"
                 visible="{= ${detailModel>/status} === 'Pending' || ${detailModel>/status} === 'InReview' }"
                 busy="{detailModel>/actionBusy}"
-                enabled="{= !${detailModel>/actionBusy} }" />
+                enabled="{= !${detailModel>/actionBusy} &amp;&amp; !${detailModel>/aiBusy} }" />
+
+            <!-- AI ile Analiz Et Butonu (Sertifika varsa) -->
+            <Button
+                id="btnAnalyzeAi"
+                text="{i18n>btnAnalyzeAi}"
+                icon="sap-icon://activate"
+                press=".onAnalyzeCertificate"
+                visible="{detailModel>/hasPdf}"
+                busy="{detailModel>/aiBusy}"
+                enabled="{= !${detailModel>/aiBusy} &amp;&amp; !${detailModel>/actionBusy} }" />
 
             <!-- Kapat Butonu -->
             <Button
@@ -192,7 +266,7 @@
                 text="{i18n>btnClose}"
                 type="Transparent"
                 press=".onCloseDetailDialog"
-                enabled="{= !${detailModel>/actionBusy} }" />
+                enabled="{= !${detailModel>/actionBusy} &amp;&amp; !${detailModel>/aiBusy} }" />
         </buttons>
     </Dialog>
 </core:FragmentDefinition>

@@ -223,7 +223,9 @@ async function main() {
   const testInReviewId = '80000000-0000-4000-8000-000000000003';
   const testApprovedId = '80000000-0000-4000-8000-000000000004';
 
-  await cds.db.run(DELETE.from(Submissions).where({ ID: { in: [testPendingId, testInReviewId, testApprovedId] } })).catch(() => null);
+  const testRegPendingId = '80000000-0000-4000-8000-000000000005';
+
+  await cds.db.run(DELETE.from(Submissions).where({ ID: { in: [testPendingId, testInReviewId, testApprovedId, testRegPendingId] } })).catch(() => null);
   await cds.db.run(DELETE.from(Suppliers).where({ ID: testSupplierId })).catch(() => null);
 
   await cds.db.run(INSERT.into(Suppliers).entries({
@@ -391,7 +393,7 @@ async function main() {
 
   // 2.9 Regresyon: 6.4-A Manuel Onay İşlemi Bozulmadı mı?
   // Yeni bir Pending başvuru oluşturup approve çağıralım
-  const testRegPendingId = '80000000-0000-4000-8000-000000000005';
+  // testRegPendingId yukarıda tanımlandı
   await cds.db.run(INSERT.into(Submissions).entries({
     ID: testRegPendingId,
     supplier_ID: testSupplierId,

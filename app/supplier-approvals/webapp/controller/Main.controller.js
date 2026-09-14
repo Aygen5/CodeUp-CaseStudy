@@ -56,6 +56,16 @@ sap.ui.define([
             var oDetailModel = new JSONModel({
                 busy: false,
                 actionBusy: false,
+                aiBusy: false,
+                hasAiReport: false,
+                aiReport: {
+                    validityStatus: "",
+                    recommendation: "",
+                    reason: "",
+                    suggestedFields: "",
+                    analyzedAt: "",
+                    fileName: ""
+                },
                 ID: "",
                 companyName: "",
                 contactPerson: "",
@@ -424,6 +434,16 @@ sap.ui.define([
 
             oDetailModel.setProperty("/busy", true);
             oDetailModel.setProperty("/showPdfPreview", false);
+            oDetailModel.setProperty("/hasAiReport", false);
+            oDetailModel.setProperty("/aiReport", {
+                validityStatus: "",
+                recommendation: "",
+                reason: "",
+                suggestedFields: "",
+                analyzedAt: "",
+                fileName: ""
+            });
+            oDetailModel.setProperty("/aiBusy", false);
 
             if (!this._pDetailDialog) {
                 this._pDetailDialog = Fragment.load({
@@ -773,7 +793,8 @@ sap.ui.define([
         },
 
         /**
-         * Opens the rejection dialog and resets the rejectModel with empty fields.
+         * Opens the rejection dialog and resets the rejectModel with empty fields,
+         * or pre-populates with AI rejection suggestion if available.
          */
         onRejectPress: async function () {
             var oView = this.getView();
@@ -786,11 +807,20 @@ sap.ui.define([
                 return;
             }
 
+            // If AI recommended rejection, pre-populate the reason and pre-select certificate
+            var bAiRejection = oDetailModel.getProperty("/hasAiReport") &&
+                (oDetailModel.getProperty("/aiReport/validityStatus") !== "Valid" ||
+                 (oDetailModel.getProperty("/aiReport/recommendation") || "").indexOf("Reddet") !== -1);
+
+            var sInitialReason = bAiRejection ? (oDetailModel.getProperty("/aiReport/reason") || "") : "";
+            var sSuggested = (oDetailModel.getProperty("/aiReport/suggestedFields") || "").toLowerCase();
+            var bCertPreselected = bAiRejection || sSuggested.indexOf("certificate") !== -1;
+
             oRejectModel.setData({
                 busy: false,
                 submissionId: sId,
                 companyName: sCompany,
-                reason: "",
+                reason: sInitialReason,
                 fields: {
                     companyName: false,
                     contactPerson: false,
@@ -801,7 +831,7 @@ sap.ui.define([
                     address: false,
                     notes: false,
                     category: false,
-                    certificate: false
+                    certificate: bCertPreselected
                 },
                 canSubmit: false
             });
@@ -990,6 +1020,77 @@ sap.ui.define([
                 this._pRejectDialog.then(function (oDialog) {
                     oDialog.close();
                 });
+            }
+        },
+
+        /**
+         * Triggers AI certificate analysis on the real CAP ApprovalService bound action.
+         * Displays decision support report without mutating the submission status.
+         */
+        onAnalyzeCertificate: async function () {
+            var oDetailModel = this.getView().getModel("detailModel");
+            var sId = oDetailModel.getProperty("/ID");
+            var oBundle = this.getResourceBundle();
+
+            if (!sId) {
+                return;
+            }
+
+            // Prevent concurrent/duplicate clicks
+            if (oDetailModel.getProperty("/aiBusy")) {
+                return;
+            }
+
+            if (!oDetailModel.getProperty("/hasPdf")) {
+                MessageBox.warning(oBundle.getText("errAiNoCertificate"));
+                return;
+            }
+
+            oDetailModel.setProperty("/aiBusy", true);
+            MessageToast.show(oBundle.getText("aiAnalyzing"));
+
+            try {
+                var oHeaders = Object.assign({
+                    "Content-Type": "application/json"
+                }, this._getAuthHeaders());
+
+                // Call real CAP ApprovalService bound action
+                var oResponse = await fetch("/odata/v4/approval/Submissions(" + sId + ")/analyzeCertificate", {
+                    method: "POST",
+                    headers: oHeaders,
+                    body: "{}"
+                });
+
+                if (!oResponse.ok) {
+                    var oErrorData = await oResponse.json().catch(function () { return null; });
+                    var sBackendMsg = (oErrorData && oErrorData.error && oErrorData.error.message)
+                        ? oErrorData.error.message
+                        : oBundle.getText("errAiDestinationFailed");
+                    oDetailModel.setProperty("/hasAiReport", false);
+                    MessageBox.error(sBackendMsg);
+                    return;
+                }
+
+                var oReport = await oResponse.json();
+                var oAiData = oReport && oReport.value ? oReport.value : oReport;
+
+                // Bind strictly to backend AIReport fields
+                oDetailModel.setProperty("/aiReport", {
+                    validityStatus: oAiData.validityStatus || "Invalid",
+                    recommendation: oAiData.recommendation || "",
+                    reason: oAiData.reason || "",
+                    suggestedFields: oAiData.suggestedFields || "",
+                    analyzedAt: oAiData.analyzedAt || new Date().toISOString(),
+                    fileName: oAiData.fileName || oDetailModel.getProperty("/certificateFileName") || "certificate.pdf"
+                });
+                oDetailModel.setProperty("/hasAiReport", true);
+
+                MessageToast.show(oBundle.getText("msgAiAnalysisSuccess"));
+            } catch (oErr) {
+                oDetailModel.setProperty("/hasAiReport", false);
+                MessageBox.error(oBundle.getText("errAiDestinationFailed") + " (" + oErr.message + ")");
+            } finally {
+                oDetailModel.setProperty("/aiBusy", false);
             }
         }
     });
