@@ -34,7 +34,8 @@
       "libs": {
         "sap.m": {},
         "sap.ui.core": {},
-        "sap.ui.layout": {}
+        "sap.ui.layout": {},
+        "sap.f": {}
       }
     },
     "contentDensities": {
@@ -66,12 +67,32 @@
       },
       "routes": [
         {
-          "name": "main",
+          "name": "auth",
           "pattern": "",
+          "target": "auth"
+        },
+        {
+          "name": "application",
+          "pattern": "application",
+          "target": "application"
+        },
+        {
+          "name": "main",
+          "pattern": "welcome",
           "target": "main"
         }
       ],
       "targets": {
+        "auth": {
+          "viewName": "Auth",
+          "viewId": "auth",
+          "viewLevel": 1
+        },
+        "application": {
+          "viewName": "Application",
+          "viewId": "application",
+          "viewLevel": 2
+        },
         "main": {
           "viewName": "Main",
           "viewId": "main",

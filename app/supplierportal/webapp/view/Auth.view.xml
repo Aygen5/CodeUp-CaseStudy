@@ -1,0 +1,238 @@
+<mvc:View
+  controllerName="codeup.supplier.portal.controller.Auth"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:f="sap.f"
+  height="100%">
+  <Page
+    id="authPage"
+    showHeader="false"
+    enableScrolling="true"
+    backgroundDesign="Solid">
+    <content>
+      <FlexBox
+        id="splitLayout"
+        fitContainer="true"
+        height="100%"
+        width="100%"
+        direction="Row"
+        alignItems="Stretch"
+        justifyContent="Center"
+        wrap="Wrap">
+
+        <!-- Sol / Görsel ve Tanıtım Bölümü -->
+        <VBox
+          id="heroSection"
+          width="50%"
+          minWidth="360px"
+          alignItems="Center"
+          justifyContent="Center"
+          renderType="Bare"
+          class="sapUiResponsiveMargin">
+          <VBox
+            width="90%"
+            alignItems="Center"
+            justifyContent="Center"
+            renderType="Bare">
+            <Image
+              id="heroImage"
+              src="img/supplier_hero.jpg"
+              width="100%"
+              densityAware="false"
+              decorative="true"
+              class="sapUiSmallMarginBottom" />
+
+            <f:Card width="100%">
+              <f:content>
+                <VBox class="sapUiMediumMargin">
+                  <HBox alignItems="Center" class="sapUiTinyMarginBottom">
+                    <Avatar
+                      icon="sap-icon://supplier"
+                      displayShape="Square"
+                      displaySize="M"
+                      class="sapUiTinyMarginEnd" />
+                    <Title
+                      text="{i18n>authHeroTitle}"
+                      level="H2"
+                      titleStyle="H3" />
+                  </HBox>
+                  <Text
+                    text="{i18n>authHeroSubtitle}"
+                    class="sapUiSmallMarginBottom" />
+                  <HBox alignItems="Center">
+                    <ObjectStatus
+                      text="{i18n>authHeroBadge1}"
+                      icon="sap-icon://cloud"
+                      state="Information"
+                      class="sapUiSmallMarginEnd" />
+                    <ObjectStatus
+                      text="{i18n>authHeroBadge2}"
+                      icon="sap-icon://shield"
+                      state="Success" />
+                  </HBox>
+                </VBox>
+              </f:content>
+            </f:Card>
+          </VBox>
+        </VBox>
+
+        <!-- Sağ / Form ve İşlem Kartı Bölümü -->
+        <VBox
+          id="formSection"
+          width="50%"
+          minWidth="360px"
+          alignItems="Center"
+          justifyContent="Center"
+          renderType="Bare"
+          class="sapUiResponsiveMargin">
+          <f:Card width="90%" minWidth="320px">
+            <f:content>
+              <VBox class="sapUiMediumMargin">
+                <!-- Başlık ve Alt Başlık -->
+                <Title
+                  id="formTitle"
+                  text="{= ${authView>/isRegister} ? ${i18n>authRegisterTitle} : ${i18n>authLoginTitle} }"
+                  level="H1"
+                  titleStyle="H2"
+                  class="sapUiTinyMarginBottom" />
+                <Text
+                  id="formSubtitle"
+                  text="{= ${authView>/isRegister} ? ${i18n>authRegisterSubtitle} : ${i18n>authLoginSubtitle} }"
+                  class="sapUiSmallMarginBottom" />
+
+                <!-- Hata Bildirimi (MessageStrip) -->
+                <MessageStrip
+                  id="errorMessageStrip"
+                  visible="{authView>/hasError}"
+                  text="{authView>/errorMessage}"
+                  type="Error"
+                  showIcon="true"
+                  showCloseButton="true"
+                  close=".onErrorStripClose"
+                  class="sapUiSmallMarginBottom" />
+
+                <!-- Başarı Bildirimi (MessageStrip) -->
+                <MessageStrip
+                  id="successMessageStrip"
+                  visible="{authView>/hasSuccess}"
+                  text="{authView>/successMessage}"
+                  type="Success"
+                  showIcon="true"
+                  class="sapUiSmallMarginBottom" />
+
+                <!-- E-Posta Alanı -->
+                <Label
+                  text="{i18n>authEmailLabel}"
+                  required="true"
+                  labelFor="emailInput" />
+                <Input
+                  id="emailInput"
+                  value="{authView>/email}"
+                  type="Email"
+                  placeholder="{i18n>authEmailPlaceholder}"
+                  valueLiveUpdate="true"
+                  liveChange=".onEmailLiveChange"
+                  class="sapUiSmallMarginBottom" />
+
+                <!-- Şifre Alanı -->
+                <Label
+                  text="{i18n>authPasswordLabel}"
+                  required="true"
+                  labelFor="passwordInput" />
+                <Input
+                  id="passwordInput"
+                  value="{authView>/password}"
+                  type="Password"
+                  placeholder="{i18n>authPasswordPlaceholder}"
+                  showPasswordButton="true"
+                  valueLiveUpdate="true"
+                  liveChange=".onPasswordLiveChange"
+                  class="sapUiSmallMarginBottom" />
+
+                <!-- Anlık 5 Şifre Kuralı Göstergesi (Yalnızca Kayıt Modunda) -->
+                <VBox
+                  id="passwordRulesBox"
+                  visible="{authView>/isRegister}"
+                  class="sapUiSmallMarginBottom">
+                  <ObjectStatus
+                    id="ruleMinChar"
+                    text="{i18n>authRuleMinChar}"
+                    icon="{authView>/rules/minChar/icon}"
+                    state="{authView>/rules/minChar/state}"
+                    class="sapUiTinyMarginBottom" />
+                  <ObjectStatus
+                    id="ruleUppercase"
+                    text="{i18n>authRuleUppercase}"
+                    icon="{authView>/rules/uppercase/icon}"
+                    state="{authView>/rules/uppercase/state}"
+                    class="sapUiTinyMarginBottom" />
+                  <ObjectStatus
+                    id="ruleLowercase"
+                    text="{i18n>authRuleLowercase}"
+                    icon="{authView>/rules/lowercase/icon}"
+                    state="{authView>/rules/lowercase/state}"
+                    class="sapUiTinyMarginBottom" />
+                  <ObjectStatus
+                    id="ruleNumber"
+                    text="{i18n>authRuleNumber}"
+                    icon="{authView>/rules/number/icon}"
+                    state="{authView>/rules/number/state}"
+                    class="sapUiTinyMarginBottom" />
+                  <ObjectStatus
+                    id="ruleSpecial"
+                    text="{i18n>authRuleSpecial}"
+                    icon="{authView>/rules/special/icon}"
+                    state="{authView>/rules/special/state}"
+                    class="sapUiTinyMarginBottom" />
+                </VBox>
+
+                <!-- Beni Hatırla (Yalnızca Giriş Modunda) -->
+                <CheckBox
+                  id="rememberMeCheckBox"
+                  text="{i18n>authRememberMe}"
+                  selected="{authView>/rememberMe}"
+                  visible="{= !${authView>/isRegister} }"
+                  class="sapUiSmallMarginBottom" />
+
+                <!-- Ana Buton (Giriş Yap / Hesap Oluştur) -->
+                <Button
+                  id="submitButton"
+                  text="{= ${authView>/isRegister} ? ${i18n>authRegisterButton} : ${i18n>authLoginButton} }"
+                  type="Emphasized"
+                  width="100%"
+                  press=".onSubmit"
+                  busy="{authView>/isBusy}"
+                  class="sapUiSmallMarginBottom" />
+
+                <!-- Hızlı Demo Doldur (Yalnızca Giriş Modunda Test Kolaylığı İçin) -->
+                <Button
+                  id="demoFillButton"
+                  text="{i18n>authQuickDemoFill}"
+                  type="Transparent"
+                  width="100%"
+                  visible="{= !${authView>/isRegister} }"
+                  press=".onQuickDemoFill"
+                  class="sapUiTinyMarginBottom" />
+
+                <!-- Mod Değiştirme Linki (Giriş <-> Kayıt) -->
+                <HBox
+                  justifyContent="Center"
+                  alignItems="Center"
+                  class="sapUiSmallMarginTop">
+                  <Text
+                    text="{= ${authView>/isRegister} ? ${i18n>authAlreadyHaveAccountText} : ${i18n>authNoAccountText} }"
+                    class="sapUiTinyMarginEnd" />
+                  <Link
+                    id="toggleModeLink"
+                    text="{= ${authView>/isRegister} ? ${i18n>authGoToLogin} : ${i18n>authGoToRegister} }"
+                    press=".onToggleAuthMode" />
+                </HBox>
+              </VBox>
+            </f:content>
+          </f:Card>
+        </VBox>
+
+      </FlexBox>
+    </content>
+  </Page>
+</mvc:View>

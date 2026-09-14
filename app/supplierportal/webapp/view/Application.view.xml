@@ -1,0 +1,55 @@
+<mvc:View
+  controllerName="codeup.supplier.portal.controller.Application"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:f="sap.f"
+  height="100%">
+  <Page
+    id="applicationPage"
+    title="{i18n>appPlaceholderTitle}"
+    showNavButton="false"
+    backgroundDesign="Solid">
+    <headerContent>
+      <Button
+        id="btnLogout"
+        text="{i18n>btnLogout}"
+        icon="sap-icon://log-out"
+        type="Transparent"
+        press=".onLogout" />
+    </headerContent>
+    <content>
+      <VBox class="sapUiResponsiveMargin">
+        <MessageStrip
+          text="{i18n>appPlaceholderNotice}"
+          type="Information"
+          showIcon="true"
+          class="sapUiSmallMarginBottom" />
+
+        <f:Card width="100%">
+          <f:content>
+            <VBox class="sapUiMediumMargin">
+              <HBox alignItems="Center" class="sapUiSmallMarginBottom">
+                <Avatar
+                  icon="sap-icon://supplier"
+                  displayShape="Circle"
+                  displaySize="L"
+                  class="sapUiMediumMarginEnd" />
+                <VBox>
+                  <Title
+                    text="{appView>/supplierEmail}"
+                    level="H2"
+                    titleStyle="H3" />
+                  <Text text="{i18n>appPlaceholderDesc}" />
+                </VBox>
+              </HBox>
+              <ObjectStatus
+                text="{i18n>systemStatusReady}"
+                state="Success"
+                icon="sap-icon://sys-enter-2" />
+            </VBox>
+          </f:content>
+        </f:Card>
+      </VBox>
+    </content>
+  </Page>
+</mvc:View>

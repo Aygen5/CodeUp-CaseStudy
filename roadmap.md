@@ -89,7 +89,7 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
 
 * [x] **Adım 5.1: UI5 Proje Kurulumu ve i18n Altyapısı**
   * `app/supplierportal/` altında freestyle bileşen; `i18n_tr.properties` ve `i18n_en.properties` (sıfır hardcoded metin, tarayıcı diline göre otomatik seçim).
-* [ ] **Adım 5.2: Giriş ve Kayıt Ekranı (Auth View)**
+* [x] **Adım 5.2: Giriş ve Kayıt Ekranı (Auth View)**
   * Bölünmüş ekran (split-screen: form kartı + kurumsal illüstrasyon).
   * Şifre göster/gizle göz simgesi, anlık yeşile dönen 5 kural göstergesi.
   * Gerçek `register` ve `login` çağrıları; başarılı girişte tedarikçi oturumunun başlatılarak doğrudan başvuru ekranına geçilmesi.
