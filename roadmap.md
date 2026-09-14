@@ -118,7 +118,7 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
   * Dinamik arama çubuğu ve filtre temizleme butonu.
   * `sap.m.Table` (başlangıçta 5 temel sütun, semantik `ObjectStatus`).
   * `ViewSettingsDialog`: Sütun ekleme/çıkarma, tarihe göre sıralama, kategori filtresi.
-* [ ] **Adım 6.3: Başvuru Detay Diyaloğu ve PDF Inline Önizleme**
+* [x] **Adım 6.3: Başvuru Detay Diyaloğu ve PDF Inline Önizleme**
   * Detay penceresinde tüm alanların ve süreç adımlarının gösterimi.
   * Yüklenen PDF sertifikanın doğrudan tarayıcı içinde önizlenmesi.
 * [ ] **Adım 6.4: Karar İşlemleri ve AI Karar Desteği**

@@ -1,0 +1,174 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:layout="sap.ui.layout"
+    xmlns:commons="sap.suite.ui.commons">
+    <Dialog
+        id="detailDialog"
+        title="{= ${detailModel>/companyName} ? (${i18n>detailDialogTitle} + ' - ' + ${detailModel>/companyName}) : ${i18n>detailDialogTitle} }"
+        contentWidth="950px"
+        contentHeight="85%"
+        stretch="{device>/system/phone}">
+        <content>
+            <VBox class="sapUiResponsiveMargin">
+                <!-- 1. Genel Bilgiler (General Information) -->
+                <Panel
+                    headerText="{i18n>detailSectionGeneral}"
+                    expandable="false"
+                    class="sapUiSmallMarginBottom">
+                    <layout:Grid defaultSpan="XL6 L6 M6 S12">
+                        <!-- Sol Kolon -->
+                        <VBox class="sapUiSmallMargin">
+                            <Label text="{i18n>colCompany}" design="Bold" />
+                            <Text text="{= ${detailModel>/companyName} || '-' }" class="sapUiTinyMarginBottom" />
+
+                            <Label text="{i18n>colContact}" design="Bold" />
+                            <Text text="{= ${detailModel>/contactPerson} || '-' }" class="sapUiTinyMarginBottom" />
+
+                            <Label text="{i18n>colEmail}" design="Bold" />
+                            <Link text="{= ${detailModel>/supplierEmail} || '-' }" href="{= 'mailto:' + ${detailModel>/supplierEmail} }" class="sapUiTinyMarginBottom" />
+
+                            <Label text="{i18n>colCategory}" design="Bold" />
+                            <Text text="{= ${detailModel>/category} || '-' }" class="sapUiTinyMarginBottom" />
+
+                            <Label text="{i18n>colPhone}" design="Bold" />
+                            <Text text="{= ${detailModel>/phone} || '-' }" class="sapUiTinyMarginBottom" />
+
+                            <Label text="{i18n>colCountry}" design="Bold" />
+                            <Text text="{= ${detailModel>/country} || '-' }" />
+                        </VBox>
+
+                        <!-- Sağ Kolon -->
+                        <VBox class="sapUiSmallMargin">
+                            <Label text="{i18n>colTaxId}" design="Bold" />
+                            <Text text="{= ${detailModel>/taxId} || '-' }" class="sapUiTinyMarginBottom" />
+
+                            <Label text="{i18n>colWebsite}" design="Bold" />
+                            <Link text="{= ${detailModel>/website} || '-' }" href="{detailModel>/website}" target="_blank" class="sapUiTinyMarginBottom" />
+
+                            <Label text="{i18n>colDate}" design="Bold" />
+                            <Text text="{path: 'detailModel>/submissionDate', formatter: '.formatter.formatDateTime'}" class="sapUiTinyMarginBottom" />
+
+                            <Label text="{i18n>colStatus}" design="Bold" />
+                            <ObjectStatus
+                                text="{= ${detailModel>/status} === 'Approved' ? ${i18n>statusApproved} : (${detailModel>/status} === 'Rejected' ? ${i18n>statusRejected} : (${detailModel>/status} === 'InReview' ? ${i18n>statusInReview} : ${i18n>statusPending})) }"
+                                state="{path: 'detailModel>/status', formatter: '.formatter.formatStatusState'}"
+                                icon="{path: 'detailModel>/status', formatter: '.formatter.formatStatusIcon'}"
+                                class="sapUiTinyMarginBottom" />
+
+                            <Label text="{i18n>colAddress}" design="Bold" />
+                            <Text text="{= ${detailModel>/address} || '-' }" class="sapUiTinyMarginBottom" />
+
+                            <Label text="{i18n>colNotes}" design="Bold" />
+                            <Text text="{= ${detailModel>/notes} || '-' }" />
+                        </VBox>
+                    </layout:Grid>
+                </Panel>
+
+                <!-- 2. Onay Süreci Akışı (ProcessFlow) -->
+                <Panel
+                    headerText="{i18n>detailSectionProcess}"
+                    expandable="false"
+                    class="sapUiSmallMarginBottom">
+                    <VBox class="sapUiSmallMargin">
+                        <!-- Red Durumunda Gerekçe ve Düzenlenebilir Alanlar Bilgi Şeridi -->
+                        <MessageStrip
+                            text="{= ${i18n>rejectionReasonLabel} + ': ' + ${detailModel>/rejectionReason} + (${detailModel>/editableFields} ? (' | ' + ${i18n>editableFieldsLabel} + ': ' + ${detailModel>/editableFields}) : '') }"
+                            type="Error"
+                            showIcon="true"
+                            showCloseButton="false"
+                            visible="{= ${detailModel>/status} === 'Rejected' &amp;&amp; !!${detailModel>/rejectionReason} }"
+                            class="sapUiSmallMarginBottom" />
+
+                        <!-- ProcessFlow Kontrolü -->
+                        <commons:ProcessFlow
+                            id="detailProcessFlow"
+                            scrollable="false"
+                            foldedCorners="true"
+                            nodes="{detailModel>/processFlow/nodes}"
+                            lanes="{detailModel>/processFlow/lanes}">
+                            <commons:nodes>
+                                <commons:ProcessFlowNode
+                                    nodeId="{detailModel>id}"
+                                    laneId="{detailModel>lane}"
+                                    title="{detailModel>title}"
+                                    titleAbbreviation="{detailModel>titleAbbreviation}"
+                                    state="{detailModel>state}"
+                                    stateText="{detailModel>stateText}"
+                                    texts="{detailModel>texts}"
+                                    children="{detailModel>children}"
+                                    highlighted="{detailModel>highlighted}" />
+                            </commons:nodes>
+                            <commons:lanes>
+                                <commons:ProcessFlowLaneHeader
+                                    laneId="{detailModel>id}"
+                                    iconSrc="{detailModel>icon}"
+                                    text="{detailModel>label}"
+                                    position="{detailModel>position}"
+                                    state="{detailModel>state}" />
+                            </commons:lanes>
+                        </commons:ProcessFlow>
+                    </VBox>
+                </Panel>
+
+                <!-- 3. Sertifika Belgesi ve Inline Önizleme -->
+                <Panel
+                    headerText="{i18n>detailSectionCertificate}"
+                    expandable="false"
+                    class="sapUiSmallMarginBottom">
+                    <VBox class="sapUiSmallMargin">
+                        <HBox alignItems="Center" justifyContent="SpaceBetween" wrap="Wrap" class="sapUiSmallMarginBottom">
+                            <HBox alignItems="Center">
+                                <core:Icon src="sap-icon://pdf-attachment" size="2rem" color="#e5252a" class="sapUiSmallMarginEnd" />
+                                <VBox>
+                                    <Text text="{= ${detailModel>/certificateFileName} || ${i18n>msgNoCertificate} }" design="Bold" />
+                                    <Text text="{= ${detailModel>/certificateMimeType} || 'application/pdf' }" />
+                                </VBox>
+                            </HBox>
+                            <HBox>
+                                <Button
+                                    id="btnTogglePdfPreview"
+                                    icon="{= ${detailModel>/showPdfPreview} ? 'sap-icon://hide' : 'sap-icon://show' }"
+                                    text="{= ${detailModel>/showPdfPreview} ? ${i18n>btnHidePreview} : ${i18n>btnTogglePreview} }"
+                                    press=".onTogglePdfPreview"
+                                    visible="{detailModel>/hasPdf}"
+                                    class="sapUiTinyMarginEnd" />
+                                <Button
+                                    id="btnOpenPdfNewTab"
+                                    icon="sap-icon://open-command-by-menu"
+                                    text="{i18n>btnOpenInNewTab}"
+                                    press=".onOpenPdfInNewTab"
+                                    visible="{detailModel>/hasPdf}" />
+                            </HBox>
+                        </HBox>
+
+                        <MessageStrip
+                            text="{i18n>msgNoCertificate}"
+                            type="Information"
+                            showIcon="true"
+                            showCloseButton="false"
+                            visible="{= !${detailModel>/hasPdf} }" />
+
+                        <!-- Inline PDF Viewer -->
+                        <VBox id="pdfViewerContainer" visible="{detailModel>/showPdfPreview}" class="sapUiSmallMarginTop">
+                            <PDFViewer
+                                id="pdfViewer"
+                                source="{detailModel>/pdfUrl}"
+                                title="{detailModel>/certificateFileName}"
+                                height="500px"
+                                width="100%"
+                                showDownloadButton="true" />
+                        </VBox>
+                    </VBox>
+                </Panel>
+            </VBox>
+        </content>
+        <buttons>
+            <Button
+                id="btnDetailClose"
+                text="{i18n>btnClose}"
+                type="Emphasized"
+                press=".onCloseDetailDialog" />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition>

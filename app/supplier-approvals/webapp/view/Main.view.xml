@@ -229,7 +229,8 @@
                             <items>
                                 <ColumnListItem
                                     id="submissionRow"
-                                    type="Active"
+                                    type="Navigation"
+                                    press=".onRowPress"
                                     vAlign="Middle">
                                     <cells>
                                         <!-- 1. Firma -->
