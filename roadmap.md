@@ -67,7 +67,7 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
   * `getMySubmission`: Tedarikçinin **sadece kendi başvurusunu** okuyabilmesini sağlayan mülkiyet filtresi.
   * `createSubmission`: Zorunlu alanlar, sadece PDF formatı ve maksimum 10 MB sınırı denetimleri (çift katmanlı backend kontrolü).
   * `reApplySubmission`: Yalnızca onaycının izin verdiği `editableFields` alanlarının güncellenebilmesi denetimi.
-* [ ] **Adım 4.2: `ApprovalService` İmplementasyonu (`srv/approval-service.cds` & `.js`)**
+* [x] **Adım 4.2: `ApprovalService` İmplementasyonu (`srv/approval-service.cds` & `.js`)**
   * `@requires: 'Approval'` ile koruma.
   * Tüm başvuruları listeleme, arama ve detay sorgulama.
   * `approve`: Durumu `Approved` yapma.
