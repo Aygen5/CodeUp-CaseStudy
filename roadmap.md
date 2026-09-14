@@ -75,8 +75,12 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
 * [ ] **Adım 4.3: BTP `gemini` Destination ve AI Karar Destek Entegrasyonu**
   * `cds.connect.to('gemini')` çağrısı (API anahtarı BTP Destination başlığında, kodda yok).
   * PDF belgesinden geçerlilik analizi: AI'ın geçerlilik durumu, önerilen karar (*Öneri: Onayla* / *Öneri: Reddet*), gerekçe ve önerilen revizyon alanlarını içeren zengin bir **karar destek raporu** döndürmesi.
-* [ ] **Adım 4.4: Backend Servislerinin Uçtan Uca API Testi**
+* [ ] **Adım 4.4: Backend Servislerinin Uçtan Uca API Testi (Port :4004 Canlı Erişimi)**
   * `cds watch` ile servis uçlarının, validasyonların ve action'ların yerel olarak doğrulanması.
+  * **Projenin Canlı Görülme Takvimi — 1. Aşama (Port 4004):**
+    * Faz 4'ün sonunda (Adım 4.4) terminalden `cds watch` komutunu çalıştıracağız.
+    * Tarayıcınızda `http://localhost:4004` açılacak!
+    * Burada OData V4 servislerimizi (`/odata/v4/public` ve `/odata/v4/approval`), yüklediğimiz 12 kurumsal tedarikçi verisini, metadata belgelerini ve servis fonksiyonlarını canlı olarak test edebileceğiz.
 
 ---
 
@@ -131,11 +135,23 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
   * Approuter'ın 5000 portunda dinleyecek şekilde yapılandırılması.
   * Top-down regex kuralına göre public uçlar (`none`) ile korumalı onay uçlarının (`xsuaa` + `Approval`) test edilmesi.
 * [ ] **Adım 7.2: Fiori Launchpad Sandbox Yapılandırması (`app/index.html` & `fioriSandboxConfig.json`)**
+  * **Projenin Canlı Görülme Takvimi — 2. Aşama (Port 5000 & Launchpad):**
+    * Faz 5 ve 6'da önce ekranlarımızı canlı backend'e bağlayıp bağımsız olarak kusursuz çalıştıracağız.
+    * Faz 7'de (Adım 7.1 ve 7.2) Approuter ayağa kalkacak (`localhost:5000`).
+    * Tarayıcınızda `http://localhost:5000/index.html#Shell-home` adresine girdiğinizde belgedeki o iki tile (`Supplier Portal` ve `Supplier Approvals`) yan yana Fiori Launchpad kabuğu altında açılacak!
   * Launchpad shell'inin ayağa kaldırılması, 2 tile tanımı (`SupplierPortal` ve `SupplierApprovals`).
   * Launchpad başlığında (header) XSUAA'dan gelen gerçek kullanıcı bilgilerinin (ad-soyad, e-posta, avatar) gösterilmesi.
-* [ ] **Adım 7.3: BTP Hibrit Bağlantı ve Rol Testi**
-  * `cds bind` ile BTP XSUAA servisi ve Destination servisinin yerel Approuter'a bağlanması.
-  * BTP Cockpit üzerinden `codeup Approval` rol koleksiyonu atama prosedürünün manuel uygulanması ve korumalı panele erişim testi.
+* [ ] **Adım 7.3: BTP Hibrit Bağlantı ve Rol Testi (4 Adımlı BTP Prosedürü)**
+  * **Faz 7 Adım 7.3 Geldiğinde İzleyeceğimiz 4 Adımlı BTP Rol Atama Prosedürü:**
+    1. **1. Adım (Terminal — Servis Açma ve Bağlama):** Terminalden Cloud Foundry'ye bağlanıp oluşturduğumuz `xs-security.json` ile servisi açacağız:
+       ```bash
+       cf create-service xsuaa application codeup-xsuaa -c xs-security.json
+       cf create-service-key codeup-xsuaa codeup-xsuaa-key
+       cds bind --to codeup-xsuaa
+       ```
+    2. **2. Adım (BTP'nin Rolü Tanıması):** BTP bu komutla `xs-security.json`'ı okuyacak ve subaccount'ınızda **`codeup Approval`** rol koleksiyonunu anında yaratacak.
+    3. **3. Adım (Kullanıcının Cockpit'e Girişi):** Tam bu anda size haber vereceğim: *"Lütfen BTP Cockpit'e girin, Security $\rightarrow$ Users $\rightarrow$ Kendi e-postanızı seçin, Assign Role Collection diyerek listede yeni beliren `codeup Approval` rolünü kendinize atayın."* diyeceğim.
+    4. **4. Adım (Test):** Siz kutucuğu işaretleyip kaydettiğiniz anda local Approuter (`:5000`) üzerinden giriş yapıp onay panelini başarıyla açacağız! (Ayrıca Faz 8'deki negatif test senaryosu için rol atanmadan önceki 403 engeli de bu aşamada kanıtlanacaktır).
 * [ ] **Adım 7.4: SAP HANA Cloud Veritabanı Entegrasyonu ve Dağıtımı**
   * Projenin zorunlu hedef veritabanı olan SAP HANA Cloud için persistence bağlantısının (`@cap-js/hana`, HDI Container service binding) yapılandırılması.
   * Faz 2'de hazırlanan veri modelinin ve 12+12 kurumsal tohum verisinin SAP HANA üzerine dağıtılması (`cds deploy --to hana`).
