@@ -164,11 +164,24 @@
             </VBox>
         </content>
         <buttons>
+            <!-- Onayla Butonu (Sadece Pending veya InReview durumlarında) -->
+            <Button
+                id="btnApprove"
+                text="{i18n>btnApprove}"
+                type="Accept"
+                icon="sap-icon://accept"
+                press=".onApprovePress"
+                visible="{= ${detailModel>/status} === 'Pending' || ${detailModel>/status} === 'InReview' }"
+                busy="{detailModel>/actionBusy}"
+                enabled="{= !${detailModel>/actionBusy} }" />
+
+            <!-- Kapat Butonu -->
             <Button
                 id="btnDetailClose"
                 text="{i18n>btnClose}"
-                type="Emphasized"
-                press=".onCloseDetailDialog" />
+                type="Transparent"
+                press=".onCloseDetailDialog"
+                enabled="{= !${detailModel>/actionBusy} }" />
         </buttons>
     </Dialog>
 </core:FragmentDefinition>

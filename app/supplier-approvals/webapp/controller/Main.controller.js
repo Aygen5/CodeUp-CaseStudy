@@ -5,9 +5,10 @@ sap.ui.define([
     "sap/ui/model/FilterOperator",
     "sap/ui/model/Sorter",
     "sap/m/MessageToast",
+    "sap/m/MessageBox",
     "sap/ui/core/Fragment",
     "codeup/supplier/approvals/model/formatter"
-], function (Controller, JSONModel, Filter, FilterOperator, Sorter, MessageToast, Fragment, formatter) {
+], function (Controller, JSONModel, Filter, FilterOperator, Sorter, MessageToast, MessageBox, Fragment, formatter) {
     "use strict";
 
     return Controller.extend("codeup.supplier.approvals.controller.Main", {
@@ -54,6 +55,7 @@ sap.ui.define([
 
             var oDetailModel = new JSONModel({
                 busy: false,
+                actionBusy: false,
                 ID: "",
                 companyName: "",
                 contactPerson: "",
@@ -635,6 +637,117 @@ sap.ui.define([
                 this._pDetailDialog.then(function (oDialog) {
                     oDialog.close();
                 });
+            }
+        },
+
+        /**
+         * Handles manual approval of the supplier submission via real CAP ApprovalService.
+         * Prompts the approver with a confirmation dialog, prevents duplicate submissions,
+         * calls the real bound action Submissions(ID)/approve, and refreshes the UI strictly
+         * based on the real backend response.
+         */
+        onApprovePress: function () {
+            var oDetailModel = this.getView().getModel("detailModel");
+            var sId = oDetailModel.getProperty("/ID");
+            var sCompany = oDetailModel.getProperty("/companyName") || "";
+            var oBundle = this.getResourceBundle();
+
+            if (!sId) {
+                return;
+            }
+
+            // Prevent duplicate clicks while an action is already in progress
+            if (oDetailModel.getProperty("/actionBusy")) {
+                return;
+            }
+
+            var sConfirmMessage = sCompany
+                ? oBundle.getText("msgApproveConfirm") + " (" + sCompany + ")"
+                : oBundle.getText("msgApproveConfirm");
+
+            MessageBox.confirm(sConfirmMessage, {
+                title: oBundle.getText("msgApproveConfirmTitle"),
+                icon: MessageBox.Icon.QUESTION,
+                actions: [MessageBox.Action.YES, MessageBox.Action.NO],
+                emphasizedAction: MessageBox.Action.YES,
+                onClose: async function (sAction) {
+                    if (sAction === MessageBox.Action.YES) {
+                        oDetailModel.setProperty("/actionBusy", true);
+                        try {
+                            var oHeaders = Object.assign({
+                                "Content-Type": "application/json"
+                            }, this._getAuthHeaders());
+
+                            // Call real CAP ApprovalService bound action
+                            var oResponse = await fetch("/odata/v4/approval/Submissions(" + sId + ")/approve", {
+                                method: "POST",
+                                headers: oHeaders,
+                                body: "{}"
+                            });
+
+                            if (!oResponse.ok) {
+                                var oErrorData = await oResponse.json().catch(function () { return null; });
+                                var sBackendMsg = (oErrorData && oErrorData.error && oErrorData.error.message)
+                                    ? oErrorData.error.message
+                                    : oBundle.getText("errApproveFailed");
+                                MessageBox.error(sBackendMsg);
+                                return;
+                            }
+
+                            // Reload submission directly from backend to guarantee truth in UI
+                            await this._reloadSubmission(sId);
+
+                            // Refresh table list & counts in main view
+                            await this._loadSubmissions();
+
+                            MessageToast.show(oBundle.getText("msgApproveSuccess"));
+                        } catch (oErr) {
+                            MessageBox.error(oBundle.getText("errApproveFailed") + " (" + oErr.message + ")");
+                        } finally {
+                            oDetailModel.setProperty("/actionBusy", false);
+                        }
+                    }
+                }.bind(this)
+            });
+        },
+
+        /**
+         * Reloads a single submission record from real backend and updates ProcessFlow and UI models.
+         * @param {string} sId Submission UUID
+         */
+        _reloadSubmission: async function (sId) {
+            var oDetailModel = this.getView().getModel("detailModel");
+            var oBundle = this.getResourceBundle();
+
+            try {
+                var oResponse = await fetch("/odata/v4/approval/Submissions(" + sId + ")", {
+                    method: "GET",
+                    headers: this._getAuthHeaders()
+                });
+
+                if (!oResponse.ok) {
+                    throw new Error("HTTP " + oResponse.status);
+                }
+
+                var oSubmission = await oResponse.json();
+
+                // Strictly update from real backend response
+                oDetailModel.setProperty("/status", oSubmission.status);
+                oDetailModel.setProperty("/rejectionReason", oSubmission.rejectionReason || "");
+                oDetailModel.setProperty("/editableFields", oSubmission.editableFields || "");
+
+                // Re-evaluate 3-stage ProcessFlow
+                var oProcessFlow = this._buildProcessFlow(oSubmission.status, oSubmission, oBundle);
+                oDetailModel.setProperty("/processFlow", oProcessFlow);
+
+                setTimeout(function () {
+                    var oPF = this.byId("detailProcessFlow");
+                    if (oPF && typeof oPF.updateModel === "function") {
+                        oPF.updateModel();
+                    }
+                }.bind(this), 0);
+            } catch (e) {
+                // Ignore network errors on background reload
             }
         }
     });
