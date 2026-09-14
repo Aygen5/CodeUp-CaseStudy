@@ -111,7 +111,7 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
 ## 📌 FAZ 6: Supplier Approvals UI5 Uygulaması (Gerçek Backend ile Canlı Entegrasyon)
 *İlke: Doğrudan çalışan CAP ApprovalService'e bağlanarak geliştirilir.*
 
-* [ ] **Adım 6.1: UI5 Proje Kurulumu ve i18n Altyapısı**
+* [x] **Adım 6.1: UI5 Proje Kurulumu ve i18n Altyapısı**
   * `app/supplier-approvals/` altında freestyle bileşen; `i18n_tr.properties` ve `i18n_en.properties`.
 * [ ] **Adım 6.2: Tablo, Filtreler ve Arama**
   * `sap.m.IconTabBar` ile durum filtreleri (*Tüm Başvurular*, *Bekleyen*, *Onaylanan*, *Reddedilen* + adet sayaçları).

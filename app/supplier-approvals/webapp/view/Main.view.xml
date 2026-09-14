@@ -1,0 +1,86 @@
+<mvc:View
+    controllerName="codeup.supplier.approvals.controller.Main"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:f="sap.f"
+    xmlns:layout="sap.ui.layout"
+    xmlns:core="sap.ui.core"
+    displayBlock="true">
+
+    <Page
+        id="approvalsPage"
+        title="{i18n>appTitle}"
+        showNavButton="false">
+        <headerContent>
+            <ObjectStatus
+                text="{i18n>systemStatusReady}"
+                state="Success"
+                icon="sap-icon://sys-enter-2"
+                class="sapUiSmallMarginEnd" />
+        </headerContent>
+
+        <content>
+            <VBox class="sapUiResponsiveMargin">
+                <!-- Cockpit Header Section -->
+                <Panel
+                    accessibleRole="Region"
+                    backgroundDesign="Translucent"
+                    class="sapUiSmallMarginBottom">
+                    <headerToolbar>
+                        <Toolbar height="3rem">
+                            <core:Icon src="sap-icon://approvals" class="sapUiSmallMarginBegin" />
+                            <Title text="{i18n>cockpitHeader}" level="H2" class="sapUiTinyMarginBegin" />
+                            <ToolbarSpacer />
+                            <ObjectStatus
+                                title="{i18n>appStatusLabel}"
+                                text="{i18n>systemStatusReady}"
+                                state="Success" />
+                        </Toolbar>
+                    </headerToolbar>
+                    <VBox class="sapUiSmallMargin">
+                        <Text text="{i18n>cockpitSubtitle}" class="sapUiTinyMarginBottom" />
+                        <MessageStrip
+                            text="{i18n>systemStatusDesc}"
+                            type="Success"
+                            showIcon="true"
+                            showCloseButton="false"
+                            class="sapUiTinyMarginTop" />
+                    </VBox>
+                </Panel>
+
+                <!-- Architecture & Service Integration Overview -->
+                <Panel
+                    accessibleRole="Region"
+                    backgroundDesign="Transparent"
+                    class="sapUiSmallMarginBottom">
+                    <headerToolbar>
+                        <Toolbar height="2.5rem">
+                            <Title text="{i18n>archTitle}" level="H3" />
+                        </Toolbar>
+                    </headerToolbar>
+                    <layout:Grid
+                        defaultSpan="XL4 L4 M6 S12"
+                        class="sapUiSmallMarginTop">
+                        <!-- Backend Service Card -->
+                        <VBox class="sapUiSmallMargin">
+                            <Label text="{i18n>archBackendLabel}" design="Bold" />
+                            <Text text="{i18n>archBackendDesc}" />
+                        </VBox>
+
+                        <!-- Security & XSUAA Card -->
+                        <VBox class="sapUiSmallMargin">
+                            <Label text="{i18n>archSecurityLabel}" design="Bold" />
+                            <Text text="{i18n>archSecurityDesc}" />
+                        </VBox>
+
+                        <!-- Target Database Card -->
+                        <VBox class="sapUiSmallMargin">
+                            <Label text="{i18n>archDbLabel}" design="Bold" />
+                            <Text text="{i18n>archDbDesc}" />
+                        </VBox>
+                    </layout:Grid>
+                </Panel>
+            </VBox>
+        </content>
+    </Page>
+</mvc:View>
