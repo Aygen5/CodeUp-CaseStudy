@@ -49,7 +49,7 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
 
 * [x] **Adım 3.1: CAP Yetkilendirme Sınırlarının Belirlenmesi**
   * `PublicService` (Dış tedarikçi işlemleri) ile `ApprovalService` (`@requires: 'Approval'`) arasındaki yetki sınırlarının deklaratif tasarımı.
-* [ ] **Adım 3.2: `xs-security.json` Deklarasyonunun Hazırlanması**
+* [x] **Adım 3.2: `xs-security.json` Deklarasyonunun Hazırlanması**
   * BTP XSUAA için `Approval` scope, `Approval` role template ve `codeup Approval` role collection tanımlarının oluşturulması.
 * [ ] **Adım 3.3: Tedarikçi Kimlik ve Oturum Mimarisi Kararı (Supplier Auth Decision)**
   * Dış tedarikçinin login sonrasında mülkiyet izolasyonunu (Supplier A $\rightarrow$ Yalnızca A'nın başvurusunu görme/düzenleme) sağlayacak oturum mekanizmasının teknik olarak netleştirilmesi.

@@ -58,6 +58,8 @@ Bu projede tek bir kurumsal yetki tanımlanır: **Approval**.
 ```json
 {
   "xsappname": "codeup-supplier-management",
+  "tenant-mode": "dedicated",
+  "description": "Security configuration for CodeUp Supplier Management",
   "scopes": [
     {
       "name": "$XSAPPNAME.Approval",

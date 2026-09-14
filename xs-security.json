@@ -1,0 +1,29 @@
+{
+  "xsappname": "codeup-supplier-management",
+  "tenant-mode": "dedicated",
+  "description": "Security configuration for CodeUp Supplier Management",
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.Approval",
+      "description": "Tedarikçi başvurularını inceleme ve onaylama yetkisi"
+    }
+  ],
+  "role-templates": [
+    {
+      "name": "Approval",
+      "description": "Supplier Approvals yönetim rolü",
+      "scope-references": [
+        "$XSAPPNAME.Approval"
+      ]
+    }
+  ],
+  "role-collections": [
+    {
+      "name": "codeup Approval",
+      "description": "Supplier Management onay yetkilisi rol koleksiyonu",
+      "role-template-references": [
+        "$XSAPPNAME.Approval"
+      ]
+    }
+  ]
+}
