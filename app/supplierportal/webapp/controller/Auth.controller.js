@@ -2,8 +2,9 @@ sap.ui.define([
   "sap/ui/core/mvc/Controller",
   "sap/ui/model/json/JSONModel",
   "sap/m/MessageToast",
-  "codeup/supplier/portal/model/AuthManager"
-], function (Controller, JSONModel, MessageToast, AuthManager) {
+  "codeup/supplier/portal/model/AuthManager",
+  "codeup/supplier/portal/model/ThemeManager"
+], function (Controller, JSONModel, MessageToast, AuthManager, ThemeManager) {
   "use strict";
 
   var SERVICE_BASE = "/odata/v4/public";
@@ -256,6 +257,10 @@ sap.ui.define([
       }
 
       return oBundle.getText("authErrUnexpected");
+    },
+
+    onToggleTheme: function () {
+      ThemeManager.toggleTheme();
     },
 
     _navToApplication: function () {

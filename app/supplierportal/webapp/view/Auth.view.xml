@@ -6,9 +6,19 @@
   height="100%">
   <Page
     id="authPage"
-    showHeader="false"
+    title="{i18n>authHeroTitle}"
+    showHeader="true"
     enableScrolling="true"
     backgroundDesign="Solid">
+    <headerContent>
+      <Button
+        id="btnThemeToggleAuth"
+        icon="{= ${themeModel>/isDark} ? 'sap-icon://light-mode' : 'sap-icon://dark-mode' }"
+        text="{= ${themeModel>/isDark} ? ${i18n>themeMorningHorizon} : ${i18n>themeEveningHorizon} }"
+        tooltip="{i18n>themeToggleTooltip}"
+        type="Transparent"
+        press=".onToggleTheme" />
+    </headerContent>
     <content>
       <FlexBox
         id="splitLayout"

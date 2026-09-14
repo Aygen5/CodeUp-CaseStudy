@@ -103,7 +103,7 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
   * Reddedilen başvuruda red gerekçesi ve "Tekrar Başvur" butonu.
   * Formun eski verilerle açılması; **ancak sadece onaycının seçtiği alanların düzenlenebilir (`editable="true"`), diğerlerinin kilitli/salt okunur (`editable="false"`) olması**.
   * Düzeltilen verinin gerçek backend'e iletilmesi ve durumun "İncelemede"ye dönmesi.
-* [ ] **Adım 5.6: Tema Yönetimi (Dark/Light)**
+* [x] **Adım 5.6: Tema Yönetimi (Dark/Light)**
   * Güncel SAPUI5 Theming API'si kullanılarak custom CSS yazılmadan Evening Horizon $\leftrightarrow$ Morning Horizon geçişi.
 
 ---

@@ -1,8 +1,9 @@
 sap.ui.define([
     "sap/ui/core/UIComponent",
     "sap/ui/Device",
-    "codeup/supplier/portal/model/models"
-], function (UIComponent, Device, models) {
+    "codeup/supplier/portal/model/models",
+    "codeup/supplier/portal/model/ThemeManager"
+], function (UIComponent, Device, models, ThemeManager) {
     "use strict";
 
     return UIComponent.extend("codeup.supplier.portal.Component", {
@@ -21,6 +22,10 @@ sap.ui.define([
 
             // Set the device model
             this.setModel(models.createDeviceModel(), "device");
+
+            // Set the theme model and initialize theme
+            this.setModel(ThemeManager.getModel(), "themeModel");
+            ThemeManager.init();
 
             // Enable routing
             this.getRouter().initialize();

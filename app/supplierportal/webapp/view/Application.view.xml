@@ -15,6 +15,14 @@
     backgroundDesign="Solid">
     <headerContent>
       <HBox alignItems="Center">
+        <Button
+          id="btnThemeToggleApp"
+          icon="{= ${themeModel>/isDark} ? 'sap-icon://light-mode' : 'sap-icon://dark-mode' }"
+          text="{= ${themeModel>/isDark} ? ${i18n>themeMorningHorizon} : ${i18n>themeEveningHorizon} }"
+          tooltip="{i18n>themeToggleTooltip}"
+          type="Transparent"
+          class="sapUiSmallMarginEnd"
+          press=".onToggleTheme" />
         <Avatar
           icon="sap-icon://supplier"
           displayShape="Circle"
