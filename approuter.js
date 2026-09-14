@@ -4,6 +4,10 @@
  * and UI5 applications (app/supplierportal, app/supplier-approvals).
  */
 const approuter = require('@sap/approuter');
+const xsenv = require('@sap/xsenv');
+
+// Load environment from default-env.json if present
+xsenv.loadEnv();
 
 // Set default port 5000 if not provided
 if (!process.env.PORT) {
@@ -43,6 +47,36 @@ if (!process.env.VCAP_SERVICES) {
 
 function startApprouter(options = {}) {
   const ar = approuter();
+
+  // Expose real authenticated XSUAA user info endpoint for Fiori Launchpad shell
+  ar.first.use('/user-api/currentUser', (req, res) => {
+    if (req.user) {
+      const givenName = req.user.name?.givenName || '';
+      const familyName = req.user.name?.familyName || '';
+      const email = req.user.email || req.user.id || '';
+      const displayName = (givenName || familyName) ? `${givenName} ${familyName}`.trim() : email;
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        name: req.user.id,
+        firstname: givenName,
+        lastname: familyName,
+        email: email,
+        displayName: displayName,
+        scopes: req.user.scopes || []
+      }));
+    } else {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        name: null,
+        firstname: null,
+        lastname: null,
+        email: null,
+        displayName: null,
+        scopes: []
+      }));
+    }
+  });
+
   const port = options.port || parseInt(process.env.PORT, 10) || 5000;
   ar.start({ port }, (err) => {
     if (err) {

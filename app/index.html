@@ -20,6 +20,25 @@
     </script>
     <script>
         sap.ui.getCore().attachInit(function () {
+            // Fetch authenticated user info from real XSUAA if logged in
+            fetch('/user-api/currentUser')
+                .then(function (res) { return res.ok ? res.json() : null; })
+                .then(function (user) {
+                    if (user && user.email && sap.ushell && sap.ushell.Container) {
+                        sap.ushell.Container.getServiceAsync("UserInfo").then(function (userInfoService) {
+                            var oUser = userInfoService.getUser();
+                            if (oUser) {
+                                if (user.displayName) oUser.setFullName(user.displayName);
+                                if (user.firstname) oUser.setFirstName(user.firstname);
+                                if (user.lastname) oUser.setLastName(user.lastname);
+                                if (user.email) oUser.setEmail(user.email);
+                                if (user.name) oUser.setId(user.name);
+                            }
+                        }).catch(function () {});
+                    }
+                })
+                .catch(function () {});
+
             sap.ushell.Container.createRenderer("fiori2").then(function (oRenderer) {
                 oRenderer.placeAt("content");
             });
