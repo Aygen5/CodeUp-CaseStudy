@@ -99,7 +99,7 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
 * [x] **Adım 5.4: Kalıcı Süreç Akışı (ProcessFlow)**
   * Başvuru gönderildiği an formun kaybolması ve yerine 3 adımlı `ProcessFlow` gelmesi.
   * Kullanıcı sayfayı yenilediğinde veya çıkıp tekrar girdiğinde form yerine doğrudan güncel başvuru durumunun gelmesi.
-* [ ] **Adım 5.5: Korumalı Yeniden Başvuru (Re-apply)**
+* [x] **Adım 5.5: Korumalı Yeniden Başvuru (Re-apply)**
   * Reddedilen başvuruda red gerekçesi ve "Tekrar Başvur" butonu.
   * Formun eski verilerle açılması; **ancak sadece onaycının seçtiği alanların düzenlenebilir (`editable="true"`), diğerlerinin kilitli/salt okunur (`editable="false"`) olması**.
   * Düzeltilen verinin gerçek backend'e iletilmesi ve durumun "İncelemede"ye dönmesi.

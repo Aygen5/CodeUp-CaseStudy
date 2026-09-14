@@ -69,7 +69,7 @@
         <f:Card
           id="existingSubmissionCard"
           width="100%"
-          visible="{appView>/hasExistingSubmission}">
+          visible="{= ${appView>/hasExistingSubmission} &amp;&amp; !${appView>/isReApplyMode} }">
           <f:header>
             <f:cards.Header
               title="{i18n>processFlowTitle}"
@@ -159,20 +159,234 @@
                   id="btnRefreshProcess"
                   text="{i18n>btnRefreshProcessFlow}"
                   icon="sap-icon://refresh"
-                  type="Emphasized"
+                  type="Transparent"
+                  class="sapUiSmallMarginEnd"
                   press=".onRefreshStatus" />
+                <Button
+                  id="btnReApply"
+                  text="{i18n>reApplyButton}"
+                  icon="sap-icon://edit"
+                  type="Emphasized"
+                  visible="{= ${appView>/existingSubmission/status} === 'Rejected' }"
+                  press=".onOpenReApply" />
               </HBox>
             </VBox>
           </f:content>
         </f:Card>
 
         <!-- =================================================================== -->
-        <!-- DURUM 2: İlk Başvuru Formu (Gruplandırılmış SimpleForm)             -->
+        <!-- DURUM 2: Korumalı Yeniden Başvuru Formu (Re-apply)                  -->
+        <!-- =================================================================== -->
+        <f:Card
+          id="reApplyCard"
+          width="100%"
+          visible="{appView>/isReApplyMode}">
+          <f:header>
+            <f:cards.Header
+              title="{i18n>reApplyTitle}"
+              subtitle="{appView>/existingSubmission/companyName}"
+              iconSrc="sap-icon://edit" />
+          </f:header>
+          <f:content>
+            <VBox class="sapUiMediumMargin">
+              <!-- Onaycının Red Gerekçesi -->
+              <MessageStrip
+                id="reApplyRejectionStrip"
+                text="{i18n>rejectionBannerTitle}: {appView>/existingSubmission/rejectionReason}"
+                type="Error"
+                showIcon="true"
+                class="sapUiSmallMarginBottom" />
+
+              <!-- Düzenlenebilir Alanlar Bilgilendirmesi -->
+              <MessageStrip
+                id="reApplyNoticeStrip"
+                text="{i18n>reApplyNotice} ({i18n>editableFieldsLabel} {appView>/reApplyEditableLabels})"
+                type="Information"
+                showIcon="true"
+                class="sapUiSmallMarginBottom" />
+
+              <form:SimpleForm
+                id="reApplyForm"
+                editable="true"
+                layout="ResponsiveGridLayout"
+                title="{i18n>reApplyTitle}"
+                labelSpanXL="4"
+                labelSpanL="4"
+                labelSpanM="4"
+                labelSpanS="12"
+                adjustLabelSpan="false"
+                emptySpanXL="0"
+                emptySpanL="0"
+                emptySpanM="0"
+                emptySpanS="0"
+                columnsXL="2"
+                columnsL="2"
+                columnsM="2"
+                singleContainerFullSize="false">
+                <form:content>
+                  <!-- 1. GRUP: Kurumsal Şirket Bilgileri -->
+                  <core:Title text="{i18n>groupCompanyInfo}" />
+
+                  <Label
+                    text="{i18n>companyNameLabel}"
+                    required="{appView>/editableFields/companyName}" />
+                  <Input
+                    id="reApplyCompanyNameInput"
+                    value="{appView>/reApplyFormData/companyName}"
+                    editable="{appView>/editableFields/companyName}"
+                    tooltip="{= ${appView>/editableFields/companyName} ? ${i18n>editableFieldTooltip} : ${i18n>lockedFieldTooltip} }"
+                    change=".onInputChange" />
+
+                  <Label
+                    text="{i18n>contactPersonLabel}"
+                    required="{appView>/editableFields/contactPerson}" />
+                  <Input
+                    id="reApplyContactPersonInput"
+                    value="{appView>/reApplyFormData/contactPerson}"
+                    editable="{appView>/editableFields/contactPerson}"
+                    tooltip="{= ${appView>/editableFields/contactPerson} ? ${i18n>editableFieldTooltip} : ${i18n>lockedFieldTooltip} }"
+                    change=".onInputChange" />
+
+                  <Label text="{i18n>emailLabel}" />
+                  <Input
+                    id="reApplyEmailInput"
+                    value="{appView>/supplierEmail}"
+                    editable="false"
+                    tooltip="{i18n>lockedFieldTooltip}" />
+
+                  <Label text="{i18n>phoneLabel}" />
+                  <Input
+                    id="reApplyPhoneInput"
+                    value="{appView>/reApplyFormData/phone}"
+                    editable="{appView>/editableFields/phone}"
+                    tooltip="{= ${appView>/editableFields/phone} ? ${i18n>editableFieldTooltip} : ${i18n>lockedFieldTooltip} }"
+                    change=".onInputChange" />
+
+                  <Label text="{i18n>countryLabel}" />
+                  <Input
+                    id="reApplyCountryInput"
+                    value="{appView>/reApplyFormData/country}"
+                    editable="{appView>/editableFields/country}"
+                    tooltip="{= ${appView>/editableFields/country} ? ${i18n>editableFieldTooltip} : ${i18n>lockedFieldTooltip} }"
+                    change=".onInputChange" />
+
+                  <Label text="{i18n>categoryLabel}" />
+                  <Select
+                    id="reApplyCategorySelect"
+                    selectedKey="{appView>/reApplyFormData/category}"
+                    enabled="{appView>/editableFields/category}"
+                    tooltip="{= ${appView>/editableFields/category} ? ${i18n>editableFieldTooltip} : ${i18n>lockedFieldTooltip} }"
+                    change=".onInputChange"
+                    width="100%">
+                    <core:Item key="" text="{i18n>selectCategoryPrompt}" />
+                    <core:Item key="Hardware" text="{i18n>categoryHardware}" />
+                    <core:Item key="Software" text="{i18n>categorySoftware}" />
+                    <core:Item key="Services" text="{i18n>categoryServices}" />
+                    <core:Item key="Consulting" text="{i18n>categoryConsulting}" />
+                  </Select>
+
+                  <Label text="{i18n>taxIdLabel}" />
+                  <Input
+                    id="reApplyTaxIdInput"
+                    value="{appView>/reApplyFormData/taxId}"
+                    editable="{appView>/editableFields/taxId}"
+                    tooltip="{= ${appView>/editableFields/taxId} ? ${i18n>editableFieldTooltip} : ${i18n>lockedFieldTooltip} }"
+                    change=".onInputChange" />
+
+                  <Label text="{i18n>websiteLabel}" />
+                  <Input
+                    id="reApplyWebsiteInput"
+                    value="{appView>/reApplyFormData/website}"
+                    editable="{appView>/editableFields/website}"
+                    tooltip="{= ${appView>/editableFields/website} ? ${i18n>editableFieldTooltip} : ${i18n>lockedFieldTooltip} }"
+                    change=".onInputChange" />
+
+                  <Label text="{i18n>addressLabel}" />
+                  <TextArea
+                    id="reApplyAddressInput"
+                    value="{appView>/reApplyFormData/address}"
+                    editable="{appView>/editableFields/address}"
+                    tooltip="{= ${appView>/editableFields/address} ? ${i18n>editableFieldTooltip} : ${i18n>lockedFieldTooltip} }"
+                    rows="3"
+                    growing="true"
+                    growingMaxLines="5"
+                    change=".onInputChange" />
+
+                  <Label text="{i18n>notesLabel}" />
+                  <TextArea
+                    id="reApplyNotesInput"
+                    value="{appView>/reApplyFormData/notes}"
+                    editable="{appView>/editableFields/notes}"
+                    tooltip="{= ${appView>/editableFields/notes} ? ${i18n>editableFieldTooltip} : ${i18n>lockedFieldTooltip} }"
+                    rows="3"
+                    growing="true"
+                    growingMaxLines="5"
+                    change=".onInputChange" />
+
+                  <!-- 2. GRUP: Sertifika Belgesi -->
+                  <core:Title text="{i18n>groupCertificateInfo}" />
+
+                  <Label text="{i18n>certificateLabel}" />
+                  <VBox>
+                    <Text
+                      text="{= ${appView>/editableFields/certificate} ? ${i18n>reApplyCertificateOptional} : ${i18n>reApplyCertificateLocked} }"
+                      class="sapUiTinyMarginBottom" />
+
+                    <unified:FileUploader
+                      id="reApplyFileUploader"
+                      name="reApplyCertificateUpload"
+                      fileType="pdf"
+                      mimeType="application/pdf"
+                      uploadOnChange="false"
+                      buttonOnly="false"
+                      buttonText="{i18n>fileUploadButtonText}"
+                      placeholder="{i18n>fileUploadPrompt}"
+                      enabled="{appView>/editableFields/certificate}"
+                      tooltip="{= ${appView>/editableFields/certificate} ? ${i18n>editableFieldTooltip} : ${i18n>lockedFieldTooltip} }"
+                      change=".onReApplyFileChange"
+                      width="100%" />
+
+                    <HBox
+                      alignItems="Center"
+                      visible="{appView>/reApplyCertificate/hasFile}"
+                      class="sapUiTinyMarginTop">
+                      <ObjectStatus
+                        id="reApplyCertStatusBadge"
+                        text="{appView>/reApplyCertificate/fileName} ({appView>/reApplyCertificate/fileSizeFormatted})"
+                        state="{appView>/reApplyCertificate/statusState}"
+                        icon="{appView>/reApplyCertificate/statusIcon}" />
+                    </HBox>
+                  </VBox>
+                </form:content>
+              </form:SimpleForm>
+
+              <HBox justifyContent="End" class="sapUiSmallMarginTop">
+                <Button
+                  id="btnCancelReApply"
+                  text="{i18n>reApplyCancelButton}"
+                  icon="sap-icon://decline"
+                  type="Transparent"
+                  class="sapUiSmallMarginEnd"
+                  press=".onCancelReApply" />
+                <Button
+                  id="btnSubmitReApply"
+                  text="{i18n>reApplySubmitButton}"
+                  icon="sap-icon://paper-plane"
+                  type="Emphasized"
+                  busy="{appView>/isBusy}"
+                  press=".onReApplySubmit" />
+              </HBox>
+            </VBox>
+          </f:content>
+        </f:Card>
+
+        <!-- =================================================================== -->
+        <!-- DURUM 3: İlk Başvuru Formu (Gruplandırılmış SimpleForm)             -->
         <!-- =================================================================== -->
         <f:Card
           id="newApplicationCard"
           width="100%"
-          visible="{= !${appView>/hasExistingSubmission} }">
+          visible="{= !${appView>/hasExistingSubmission} &amp;&amp; !${appView>/isReApplyMode} }">
           <f:content>
             <VBox class="sapUiMediumMargin">
               <form:SimpleForm

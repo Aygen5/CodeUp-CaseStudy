@@ -21,6 +21,41 @@ sap.ui.define([
           lanes: [],
           nodes: []
         },
+        isReApplyMode: false,
+        reApplyEditableLabels: "",
+        editableFields: {
+          companyName: false,
+          contactPerson: false,
+          phone: false,
+          country: false,
+          taxId: false,
+          website: false,
+          address: false,
+          notes: false,
+          category: false,
+          certificate: false
+        },
+        reApplyFormData: {
+          companyName: "",
+          contactPerson: "",
+          phone: "",
+          country: "",
+          taxId: "",
+          website: "",
+          address: "",
+          notes: "",
+          category: ""
+        },
+        reApplyCertificate: {
+          hasFile: false,
+          fileName: "",
+          fileSize: 0,
+          fileSizeFormatted: "",
+          base64: "",
+          isValid: false,
+          statusState: "None",
+          statusIcon: "sap-icon://document-text"
+        },
         isBusy: false,
         hasError: false,
         errorMessage: "",
@@ -460,6 +495,316 @@ sap.ui.define([
           await this._loadExistingSubmission();
         } else {
           // Hata yönetimi
+          var sErrorMsg = oBundle.getText("authErrUnexpected");
+          if (data && data.error && data.error.message) {
+            sErrorMsg = data.error.message;
+          } else if (data && data.message) {
+            sErrorMsg = data.message;
+          }
+          oModel.setProperty("/hasError", true);
+          oModel.setProperty("/errorMessage", sErrorMsg);
+        }
+      } catch (err) {
+        oModel.setProperty("/hasError", true);
+        oModel.setProperty("/errorMessage", oBundle.getText("authErrServerUnavailable"));
+      } finally {
+        oModel.setProperty("/isBusy", false);
+      }
+    },
+
+    _parseEditableFields: function (sEditableFields, oBundle) {
+      var FIELD_MAP = {
+        'şirket adı': 'companyName',
+        'sirket adi': 'companyName',
+        'companyname': 'companyName',
+        'iletişim kişisi': 'contactPerson',
+        'iletisim kisisi': 'contactPerson',
+        'contactperson': 'contactPerson',
+        'telefon': 'phone',
+        'phone': 'phone',
+        'ülke': 'country',
+        'ulke': 'country',
+        'country': 'country',
+        'vergi no': 'taxId',
+        'vergi numarası': 'taxId',
+        'vergi numarasi': 'taxId',
+        'taxid': 'taxId',
+        'web sitesi': 'website',
+        'website': 'website',
+        'adres': 'address',
+        'address': 'address',
+        'notlar': 'notes',
+        'notes': 'notes',
+        'kategori': 'category',
+        'category': 'category',
+        'sertifika': 'certificate',
+        'certificate': 'certificate'
+      };
+
+      var oEditable = {
+        companyName: false,
+        contactPerson: false,
+        phone: false,
+        country: false,
+        taxId: false,
+        website: false,
+        address: false,
+        notes: false,
+        category: false,
+        certificate: false
+      };
+
+      var LABEL_MAP = {
+        companyName: oBundle.getText("companyNameLabel"),
+        contactPerson: oBundle.getText("contactPersonLabel"),
+        phone: oBundle.getText("phoneLabel"),
+        country: oBundle.getText("countryLabel"),
+        taxId: oBundle.getText("taxIdLabel"),
+        website: oBundle.getText("websiteLabel"),
+        address: oBundle.getText("addressLabel"),
+        notes: oBundle.getText("notesLabel"),
+        category: oBundle.getText("categoryLabel"),
+        certificate: oBundle.getText("certificateLabel")
+      };
+
+      var aLabels = [];
+      if (sEditableFields && typeof sEditableFields === "string") {
+        var aTokens = sEditableFields.split(",").map(function (s) {
+          return s.trim().toLowerCase();
+        }).filter(Boolean);
+
+        aTokens.forEach(function (token) {
+          var canonical = FIELD_MAP[token];
+          if (canonical && oEditable.hasOwnProperty(canonical)) {
+            oEditable[canonical] = true;
+            if (LABEL_MAP[canonical] && aLabels.indexOf(LABEL_MAP[canonical]) === -1) {
+              aLabels.push(LABEL_MAP[canonical]);
+            }
+          }
+        });
+      }
+
+      return {
+        flags: oEditable,
+        labelSummary: aLabels.join(", ")
+      };
+    },
+
+    onOpenReApply: function () {
+      var oModel = this.getView().getModel("appView");
+      var oBundle = this.getView().getModel("i18n").getResourceBundle();
+      var oSubmission = oModel.getProperty("/existingSubmission");
+
+      if (!oSubmission || oSubmission.status !== "Rejected") {
+        return;
+      }
+
+      var parsed = this._parseEditableFields(oSubmission.editableFields, oBundle);
+      oModel.setProperty("/editableFields", parsed.flags);
+      oModel.setProperty("/reApplyEditableLabels", parsed.labelSummary || "-");
+
+      oModel.setProperty("/reApplyFormData", {
+        companyName: oSubmission.companyName || "",
+        contactPerson: oSubmission.contactPerson || "",
+        phone: oSubmission.phone || "",
+        country: oSubmission.country || "",
+        taxId: oSubmission.taxId || "",
+        website: oSubmission.website || "",
+        address: oSubmission.address || "",
+        notes: oSubmission.notes || "",
+        category: oSubmission.category || ""
+      });
+
+      this._clearReApplyCertificate();
+      oModel.setProperty("/hasError", false);
+      oModel.setProperty("/hasSuccess", false);
+      oModel.setProperty("/isReApplyMode", true);
+    },
+
+    onCancelReApply: function () {
+      var oModel = this.getView().getModel("appView");
+      oModel.setProperty("/isReApplyMode", false);
+      oModel.setProperty("/hasError", false);
+    },
+
+    onReApplyFileChange: function (oEvent) {
+      var oModel = this.getView().getModel("appView");
+      var oBundle = this.getView().getModel("i18n").getResourceBundle();
+      var oUploader = this.byId("reApplyFileUploader");
+
+      oModel.setProperty("/hasError", false);
+
+      var aFiles = oEvent.getParameter("files");
+      if (!aFiles || aFiles.length === 0) {
+        this._clearReApplyCertificate();
+        return;
+      }
+
+      var oFile = aFiles[0];
+      var sFileName = oFile.name || "";
+
+      // 1. Format Kontrolü (PDF)
+      if (!sFileName.toLowerCase().endsWith(".pdf")) {
+        if (oUploader) {
+          oUploader.clear();
+        }
+        this._clearReApplyCertificate();
+        oModel.setProperty("/hasError", true);
+        oModel.setProperty("/errorMessage", oBundle.getText("errFileNotPdf"));
+        return;
+      }
+
+      // 2. Boyut Kontrolü (<= 10 MB)
+      if (oFile.size > MAX_FILE_SIZE) {
+        if (oUploader) {
+          oUploader.clear();
+        }
+        this._clearReApplyCertificate();
+        oModel.setProperty("/hasError", true);
+        oModel.setProperty("/errorMessage", oBundle.getText("errFileSizeExceeded"));
+        return;
+      }
+
+      var sSizeFormatted = (oFile.size / (1024 * 1024)).toFixed(2) + " MB";
+      if (oFile.size < 1024 * 1024) {
+        sSizeFormatted = (oFile.size / 1024).toFixed(1) + " KB";
+      }
+
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        oModel.setProperty("/reApplyCertificate", {
+          hasFile: true,
+          fileName: sFileName,
+          fileSize: oFile.size,
+          fileSizeFormatted: sSizeFormatted,
+          base64: e.target.result,
+          isValid: true,
+          statusState: "Success",
+          statusIcon: "sap-icon://sys-enter-2"
+        });
+      };
+      reader.onerror = function () {
+        if (oUploader) {
+          oUploader.clear();
+        }
+        this._clearReApplyCertificate();
+        oModel.setProperty("/hasError", true);
+        oModel.setProperty("/errorMessage", oBundle.getText("errFileRequired"));
+      }.bind(this);
+
+      reader.readAsDataURL(oFile);
+    },
+
+    _clearReApplyCertificate: function () {
+      var oModel = this.getView().getModel("appView");
+      oModel.setProperty("/reApplyCertificate", {
+        hasFile: false,
+        fileName: "",
+        fileSize: 0,
+        fileSizeFormatted: "",
+        base64: "",
+        isValid: false,
+        statusState: "None",
+        statusIcon: "sap-icon://document-text"
+      });
+      var oUploader = this.byId("reApplyFileUploader");
+      if (oUploader) {
+        oUploader.clear();
+      }
+    },
+
+    onReApplySubmit: async function () {
+      var oModel = this.getView().getModel("appView");
+      var oBundle = this.getView().getModel("i18n").getResourceBundle();
+      var oSubmission = oModel.getProperty("/existingSubmission");
+      var oReApplyData = oModel.getProperty("/reApplyFormData");
+      var oCertData = oModel.getProperty("/reApplyCertificate");
+      var oEditableFlags = oModel.getProperty("/editableFields");
+
+      if (!oSubmission || oSubmission.status !== "Rejected") {
+        return;
+      }
+
+      // 1. Zorunlu alan kontrolü (eğer düzenlemeye açıldıysa boş bırakılamaz)
+      if (oEditableFlags.companyName && !(oReApplyData.companyName || "").trim()) {
+        oModel.setProperty("/hasError", true);
+        oModel.setProperty("/errorMessage", oBundle.getText("errCompanyNameRequired"));
+        return;
+      }
+      if (oEditableFlags.contactPerson && !(oReApplyData.contactPerson || "").trim()) {
+        oModel.setProperty("/hasError", true);
+        oModel.setProperty("/errorMessage", oBundle.getText("errContactPersonRequired"));
+        return;
+      }
+
+      // 2. En az bir değişiklik yapıldı mı denetimi
+      var bHasChange = false;
+      var aKeys = ['companyName', 'contactPerson', 'phone', 'country', 'taxId', 'website', 'address', 'notes', 'category'];
+      for (var i = 0; i < aKeys.length; i++) {
+        var k = aKeys[i];
+        if (oEditableFlags[k]) {
+          var valNew = (oReApplyData[k] || "").trim();
+          var valOld = (oSubmission[k] || "").trim();
+          if (valNew !== valOld) {
+            bHasChange = true;
+            break;
+          }
+        }
+      }
+
+      if (oEditableFlags.certificate && oCertData && oCertData.isValid && oCertData.base64) {
+        bHasChange = true;
+      }
+
+      if (!bHasChange) {
+        oModel.setProperty("/hasError", true);
+        oModel.setProperty("/errorMessage", oBundle.getText("reApplyNoChanges"));
+        return;
+      }
+
+      // 3. Payload hazırlığı (Client asla supplier_ID göndermez)
+      var payload = {
+        submissionId: oSubmission.ID
+      };
+
+      aKeys.forEach(function (k) {
+        if (oReApplyData[k] !== undefined) {
+          payload[k] = typeof oReApplyData[k] === "string" ? oReApplyData[k].trim() : oReApplyData[k];
+        }
+      });
+
+      if (oEditableFlags.certificate && oCertData && oCertData.isValid && oCertData.base64) {
+        payload.certificate = oCertData.base64;
+        payload.certificateFileName = oCertData.fileName || "certificate.pdf";
+        payload.certificateMimeType = "application/pdf";
+      }
+
+      oModel.setProperty("/isBusy", true);
+      oModel.setProperty("/hasError", false);
+
+      var headers = Object.assign({
+        "Content-Type": "application/json"
+      }, AuthManager.getAuthHeaders());
+
+      try {
+        var response = await fetch(SERVICE_BASE + "/reApplySubmission", {
+          method: "POST",
+          headers: headers,
+          body: JSON.stringify(payload)
+        });
+
+        var data = null;
+        try {
+          data = await response.json();
+        } catch (e) {}
+
+        if (response.ok) {
+          oModel.setProperty("/isReApplyMode", false);
+          oModel.setProperty("/hasSuccess", true);
+          oModel.setProperty("/successMessage", oBundle.getText("reApplySuccess"));
+          MessageToast.show(oBundle.getText("reApplySuccess"));
+          await this._loadExistingSubmission();
+        } else {
           var sErrorMsg = oBundle.getText("authErrUnexpected");
           if (data && data.error && data.error.message) {
             sErrorMsg = data.error.message;
