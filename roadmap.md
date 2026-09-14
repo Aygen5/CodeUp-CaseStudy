@@ -72,7 +72,7 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
   * Tüm başvuruları listeleme, arama ve detay sorgulama.
   * `approve`: Durumu `Approved` yapma.
   * `reject`: Karar notu ve düzenlenebilir alan listesi zorunluluğu doğrulaması (`status = 'Rejected'`).
-* [ ] **Adım 4.3: BTP `gemini` Destination ve AI Karar Destek Entegrasyonu**
+* [x] **Adım 4.3: BTP `gemini` Destination ve AI Karar Destek Entegrasyonu**
   * `cds.connect.to('gemini')` çağrısı (API anahtarı BTP Destination başlığında, kodda yok).
   * PDF belgesinden geçerlilik analizi: AI'ın geçerlilik durumu, önerilen karar (*Öneri: Onayla* / *Öneri: Reddet*), gerekçe ve önerilen revizyon alanlarını içeren zengin bir **karar destek raporu** döndürmesi.
 * [ ] **Adım 4.4: Backend Servislerinin Uçtan Uca API Testi (Port :4004 Canlı Erişimi)**

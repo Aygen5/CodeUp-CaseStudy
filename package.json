@@ -24,6 +24,13 @@
     "requires": {
       "db": {
         "kind": "sqlite"
+      },
+      "gemini": {
+        "kind": "rest",
+        "credentials": {
+          "destination": "gemini",
+          "requestTimeout": 60000
+        }
       }
     },
     "server": {

@@ -1,10 +1,19 @@
-﻿namespace codeup.supplier.management;
+namespace codeup.supplier.management;
 
 using { codeup.supplier.management as db } from '../db/schema';
 
 @path: '/odata/v4/approval'
 @(requires: 'Approval')
 service ApprovalService {
+
+  type AIReport {
+    validityStatus  : String;
+    recommendation  : String;
+    reason          : String;
+    suggestedFields : String;
+    analyzedAt      : Timestamp;
+    fileName        : String;
+  }
 
   @readonly
   entity Suppliers as projection on db.Suppliers excluding { passwordHash };
@@ -20,6 +29,7 @@ service ApprovalService {
       rejectionReason : String,
       editableFields  : String
     ) returns Submissions;
+    action analyzeCertificate() returns AIReport;
   };
 
   action approveSubmission(
@@ -31,5 +41,9 @@ service ApprovalService {
     rejectionReason : String,
     editableFields  : String
   ) returns Submissions;
+
+  action analyzeSubmissionCertificate(
+    ID : UUID
+  ) returns AIReport;
 
 }

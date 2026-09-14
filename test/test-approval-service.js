@@ -1,4 +1,4 @@
-﻿const cds = require('@sap/cds');
+const cds = require('@sap/cds');
 const express = require('express');
 
 async function main() {
@@ -71,6 +71,18 @@ async function main() {
 
   const validHexId1 = '11111111-2222-4333-8444-555555555555';
   const validHexId2 = '66666666-7777-4888-8999-000000000000';
+
+  await cds.db.run(
+    DELETE.from(Submissions).where({ ID: { in: [validHexId1, validHexId2] } })
+  ).catch(() => null);
+
+  await cds.db.run(
+    UPDATE(Submissions).set({ status: 'InReview', rejectionReason: null, editableFields: null }).where({ ID: 's2010001-0000-4000-8000-000000000007' })
+  ).catch(() => null);
+
+  await cds.db.run(
+    UPDATE(Submissions).set({ status: 'Pending', rejectionReason: null, editableFields: null }).where({ ID: 's2010001-0000-4000-8000-000000000006' })
+  ).catch(() => null);
 
   await cds.db.run(
     INSERT.into(Submissions).entries([
