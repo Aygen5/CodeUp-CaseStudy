@@ -1,0 +1,79 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:layout="sap.ui.layout">
+    <ViewSettingsDialog
+        id="viewSettingsDialog"
+        confirm=".onConfirmViewSettings"
+        resetFilters=".onResetViewSettings">
+        <sortItems>
+            <ViewSettingsItem
+                text="{i18n>colDate}"
+                key="submissionDate"
+                selected="true" />
+            <ViewSettingsItem
+                text="{i18n>colCompany}"
+                key="companyName" />
+            <ViewSettingsItem
+                text="{i18n>colStatus}"
+                key="status" />
+        </sortItems>
+        <filterItems>
+            <ViewSettingsFilterItem
+                text="{i18n>colCategory}"
+                key="category"
+                multiSelect="false">
+                <items>
+                    <ViewSettingsItem text="Hardware" key="Hardware" />
+                    <ViewSettingsItem text="Software" key="Software" />
+                    <ViewSettingsItem text="Services" key="Services" />
+                    <ViewSettingsItem text="Consulting" key="Consulting" />
+                </items>
+            </ViewSettingsFilterItem>
+        </filterItems>
+        <customTabs>
+            <ViewSettingsCustomTab
+                id="columnsTab"
+                title="{i18n>settingsColumnsTab}">
+                <VBox class="sapUiSmallMargin">
+                    <CheckBox
+                        text="{i18n>colCompany}"
+                        selected="{viewModel>/columns/companyName}" />
+                    <CheckBox
+                        text="{i18n>colContact}"
+                        selected="{viewModel>/columns/contactPerson}" />
+                    <CheckBox
+                        text="{i18n>colEmail}"
+                        selected="{viewModel>/columns/supplierEmail}" />
+                    <CheckBox
+                        text="{i18n>colDate}"
+                        selected="{viewModel>/columns/submissionDate}" />
+                    <CheckBox
+                        text="{i18n>colStatus}"
+                        selected="{viewModel>/columns/status}" />
+                    <CheckBox
+                        text="{i18n>colPhone}"
+                        selected="{viewModel>/columns/phone}" />
+                    <CheckBox
+                        text="{i18n>colCountry}"
+                        selected="{viewModel>/columns/country}" />
+                    <CheckBox
+                        text="{i18n>colCategory}"
+                        selected="{viewModel>/columns/category}" />
+                    <CheckBox
+                        text="{i18n>colTaxId}"
+                        selected="{viewModel>/columns/taxId}" />
+                    <CheckBox
+                        text="{i18n>colWebsite}"
+                        selected="{viewModel>/columns/website}" />
+                    <CheckBox
+                        text="{i18n>colAddress}"
+                        selected="{viewModel>/columns/address}" />
+                    <CheckBox
+                        text="{i18n>colNotes}"
+                        selected="{viewModel>/columns/notes}" />
+                </VBox>
+            </ViewSettingsCustomTab>
+        </customTabs>
+    </ViewSettingsDialog>
+</core:FragmentDefinition>

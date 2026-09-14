@@ -12,74 +12,290 @@
         title="{i18n>appTitle}"
         showNavButton="false">
         <headerContent>
-            <ObjectStatus
-                text="{i18n>systemStatusReady}"
-                state="Success"
-                icon="sap-icon://sys-enter-2"
-                class="sapUiSmallMarginEnd" />
+            <Button
+                id="btnHeaderRefresh"
+                icon="sap-icon://refresh"
+                tooltip="{i18n>btnRefresh}"
+                press=".onRefresh" />
         </headerContent>
 
         <content>
             <VBox class="sapUiResponsiveMargin">
-                <!-- Cockpit Header Section -->
-                <Panel
-                    accessibleRole="Region"
-                    backgroundDesign="Translucent"
-                    class="sapUiSmallMarginBottom">
-                    <headerToolbar>
-                        <Toolbar height="3rem">
-                            <core:Icon src="sap-icon://approvals" class="sapUiSmallMarginBegin" />
-                            <Title text="{i18n>cockpitHeader}" level="H2" class="sapUiTinyMarginBegin" />
-                            <ToolbarSpacer />
-                            <ObjectStatus
-                                title="{i18n>appStatusLabel}"
-                                text="{i18n>systemStatusReady}"
-                                state="Success" />
-                        </Toolbar>
-                    </headerToolbar>
-                    <VBox class="sapUiSmallMargin">
-                        <Text text="{i18n>cockpitSubtitle}" class="sapUiTinyMarginBottom" />
-                        <MessageStrip
-                            text="{i18n>systemStatusDesc}"
-                            type="Success"
-                            showIcon="true"
-                            showCloseButton="false"
-                            class="sapUiTinyMarginTop" />
-                    </VBox>
-                </Panel>
+                <!-- Authorization Error Strip (Shown if backend returns 401/403) -->
+                <MessageStrip
+                    id="authErrorStrip"
+                    text="{viewModel>/authErrorMessage}"
+                    type="Error"
+                    showIcon="true"
+                    showCloseButton="false"
+                    class="sapUiSmallMarginBottom"
+                    visible="{viewModel>/hasAuthError}" />
 
-                <!-- Architecture & Service Integration Overview -->
-                <Panel
-                    accessibleRole="Region"
-                    backgroundDesign="Transparent"
-                    class="sapUiSmallMarginBottom">
-                    <headerToolbar>
-                        <Toolbar height="2.5rem">
-                            <Title text="{i18n>archTitle}" level="H3" />
-                        </Toolbar>
-                    </headerToolbar>
-                    <layout:Grid
-                        defaultSpan="XL4 L4 M6 S12"
-                        class="sapUiSmallMarginTop">
-                        <!-- Backend Service Card -->
-                        <VBox class="sapUiSmallMargin">
-                            <Label text="{i18n>archBackendLabel}" design="Bold" />
-                            <Text text="{i18n>archBackendDesc}" />
-                        </VBox>
+                <!-- Status Tabs & Submissions Table Section -->
+                <IconTabBar
+                    id="iconTabBar"
+                    select=".onTabSelect"
+                    selectedKey="{viewModel>/selectedTab}"
+                    headerBackgroundDesign="Transparent"
+                    class="sapUiNoContentPadding">
+                    <items>
+                        <IconTabFilter
+                            id="tabAll"
+                            key="all"
+                            icon="sap-icon://hint"
+                            text="{i18n>tabAll}"
+                            count="{viewModel>/counts/all}" />
+                        <IconTabFilter
+                            id="tabPending"
+                            key="Pending"
+                            icon="sap-icon://pending"
+                            iconColor="Critical"
+                            text="{i18n>tabPending}"
+                            count="{viewModel>/counts/pending}" />
+                        <IconTabFilter
+                            id="tabApproved"
+                            key="Approved"
+                            icon="sap-icon://sys-enter-2"
+                            iconColor="Positive"
+                            text="{i18n>tabApproved}"
+                            count="{viewModel>/counts/approved}" />
+                        <IconTabFilter
+                            id="tabRejected"
+                            key="Rejected"
+                            icon="sap-icon://sys-cancel-2"
+                            iconColor="Negative"
+                            text="{i18n>tabRejected}"
+                            count="{viewModel>/counts/rejected}" />
+                    </items>
 
-                        <!-- Security & XSUAA Card -->
-                        <VBox class="sapUiSmallMargin">
-                            <Label text="{i18n>archSecurityLabel}" design="Bold" />
-                            <Text text="{i18n>archSecurityDesc}" />
-                        </VBox>
+                    <content>
+                        <Table
+                            id="submissionsTable"
+                            items="{
+                                path: 'submissions>/items',
+                                sorter: {
+                                    path: 'submissionDate',
+                                    descending: true
+                                }
+                            }"
+                            busy="{viewModel>/busy}"
+                            busyIndicatorDelay="0"
+                            noDataText="{i18n>emptyTableText}"
+                            growing="true"
+                            growingThreshold="20"
+                            class="sapUiResponsiveMargin">
+                            <headerToolbar>
+                                <OverflowToolbar id="tableToolbar">
+                                    <Title text="{i18n>tableTitle}" level="H3" />
+                                    <Text
+                                        text="{= ' (' + ${viewModel>/filteredCount} + ')' }"
+                                        class="sapUiTinyMarginBegin"
+                                        visible="{= ${viewModel>/filteredCount} !== undefined }" />
+                                    <ToolbarSpacer />
+                                    <SearchField
+                                        id="searchField"
+                                        width="18rem"
+                                        placeholder="{i18n>searchPlaceholder}"
+                                        value="{viewModel>/searchQuery}"
+                                        search=".onSearch"
+                                        liveChange=".onSearch" />
+                                    <Button
+                                        id="btnSettings"
+                                        icon="sap-icon://action-settings"
+                                        tooltip="{i18n>btnSettings}"
+                                        press=".onOpenViewSettings" />
+                                    <Button
+                                        id="btnClearFilters"
+                                        icon="sap-icon://clear-filter"
+                                        tooltip="{i18n>btnClearFilter}"
+                                        press=".onClearFilters" />
+                                    <Button
+                                        id="btnRefresh"
+                                        icon="sap-icon://refresh"
+                                        tooltip="{i18n>btnRefresh}"
+                                        press=".onRefresh" />
+                                </OverflowToolbar>
+                            </headerToolbar>
 
-                        <!-- Target Database Card -->
-                        <VBox class="sapUiSmallMargin">
-                            <Label text="{i18n>archDbLabel}" design="Bold" />
-                            <Text text="{i18n>archDbDesc}" />
-                        </VBox>
-                    </layout:Grid>
-                </Panel>
+                            <columns>
+                                <!-- 1. Firma (Varsayılan Açık) -->
+                                <Column
+                                    id="colCompany"
+                                    visible="{viewModel>/columns/companyName}"
+                                    demandPopin="true"
+                                    minScreenWidth="Tablet">
+                                    <Text text="{i18n>colCompany}" />
+                                </Column>
+
+                                <!-- 2. İlgili Kişi (Varsayılan Açık) -->
+                                <Column
+                                    id="colContact"
+                                    visible="{viewModel>/columns/contactPerson}"
+                                    demandPopin="true"
+                                    minScreenWidth="Tablet">
+                                    <Text text="{i18n>colContact}" />
+                                </Column>
+
+                                <!-- 3. E-Posta (Varsayılan Açık) -->
+                                <Column
+                                    id="colEmail"
+                                    visible="{viewModel>/columns/supplierEmail}"
+                                    demandPopin="true"
+                                    minScreenWidth="Desktop">
+                                    <Text text="{i18n>colEmail}" />
+                                </Column>
+
+                                <!-- 4. Gönderim Tarihi (Varsayılan Açık) -->
+                                <Column
+                                    id="colDate"
+                                    visible="{viewModel>/columns/submissionDate}"
+                                    demandPopin="true"
+                                    minScreenWidth="Desktop">
+                                    <Text text="{i18n>colDate}" />
+                                </Column>
+
+                                <!-- 5. Durum (Varsayılan Açık) -->
+                                <Column
+                                    id="colStatus"
+                                    visible="{viewModel>/columns/status}"
+                                    hAlign="End">
+                                    <Text text="{i18n>colStatus}" />
+                                </Column>
+
+                                <!-- 6. Telefon (İsteğe Bağlı) -->
+                                <Column
+                                    id="colPhone"
+                                    visible="{viewModel>/columns/phone}"
+                                    demandPopin="true"
+                                    minScreenWidth="Desktop">
+                                    <Text text="{i18n>colPhone}" />
+                                </Column>
+
+                                <!-- 7. Ülke (İsteğe Bağlı) -->
+                                <Column
+                                    id="colCountry"
+                                    visible="{viewModel>/columns/country}"
+                                    demandPopin="true"
+                                    minScreenWidth="Desktop">
+                                    <Text text="{i18n>colCountry}" />
+                                </Column>
+
+                                <!-- 8. Kategori (İsteğe Bağlı) -->
+                                <Column
+                                    id="colCategory"
+                                    visible="{viewModel>/columns/category}"
+                                    demandPopin="true"
+                                    minScreenWidth="Desktop">
+                                    <Text text="{i18n>colCategory}" />
+                                </Column>
+
+                                <!-- 9. Vergi No (İsteğe Bağlı) -->
+                                <Column
+                                    id="colTaxId"
+                                    visible="{viewModel>/columns/taxId}"
+                                    demandPopin="true"
+                                    minScreenWidth="Desktop">
+                                    <Text text="{i18n>colTaxId}" />
+                                </Column>
+
+                                <!-- 10. Web Sitesi (İsteğe Bağlı) -->
+                                <Column
+                                    id="colWebsite"
+                                    visible="{viewModel>/columns/website}"
+                                    demandPopin="true"
+                                    minScreenWidth="Desktop">
+                                    <Text text="{i18n>colWebsite}" />
+                                </Column>
+
+                                <!-- 11. Adres (İsteğe Bağlı) -->
+                                <Column
+                                    id="colAddress"
+                                    visible="{viewModel>/columns/address}"
+                                    demandPopin="true"
+                                    minScreenWidth="Desktop">
+                                    <Text text="{i18n>colAddress}" />
+                                </Column>
+
+                                <!-- 12. Notlar (İsteğe Bağlı) -->
+                                <Column
+                                    id="colNotes"
+                                    visible="{viewModel>/columns/notes}"
+                                    demandPopin="true"
+                                    minScreenWidth="Desktop">
+                                    <Text text="{i18n>colNotes}" />
+                                </Column>
+                            </columns>
+
+                            <items>
+                                <ColumnListItem
+                                    id="submissionRow"
+                                    type="Active"
+                                    vAlign="Middle">
+                                    <cells>
+                                        <!-- 1. Firma -->
+                                        <ObjectIdentifier
+                                            title="{submissions>companyName}"
+                                            text="{submissions>category}" />
+
+                                        <!-- 2. İlgili Kişi -->
+                                        <Text text="{submissions>contactPerson}" />
+
+                                        <!-- 3. E-Posta -->
+                                        <Link
+                                            text="{submissions>supplierEmail}"
+                                            href="{= 'mailto:' + ${submissions>supplierEmail} }" />
+
+                                        <!-- 4. Gönderim Tarihi -->
+                                        <Text text="{
+                                            path: 'submissions>submissionDate',
+                                            formatter: '.formatter.formatDateTime'
+                                        }" />
+
+                                        <!-- 5. Durum -->
+                                        <ObjectStatus
+                                            text="{= ${submissions>status} === 'Approved' ? ${i18n>statusApproved} : (${submissions>status} === 'Rejected' ? ${i18n>statusRejected} : (${submissions>status} === 'InReview' ? ${i18n>statusInReview} : ${i18n>statusPending})) }"
+                                            state="{
+                                                path: 'submissions>status',
+                                                formatter: '.formatter.formatStatusState'
+                                            }"
+                                            icon="{
+                                                path: 'submissions>status',
+                                                formatter: '.formatter.formatStatusIcon'
+                                            }" />
+
+                                        <!-- 6. Telefon -->
+                                        <Text text="{submissions>phone}" />
+
+                                        <!-- 7. Ülke -->
+                                        <Text text="{submissions>country}" />
+
+                                        <!-- 8. Kategori -->
+                                        <Text text="{submissions>category}" />
+
+                                        <!-- 9. Vergi No -->
+                                        <Text text="{submissions>taxId}" />
+
+                                        <!-- 10. Web Sitesi -->
+                                        <Link
+                                            text="{submissions>website}"
+                                            href="{submissions>website}"
+                                            target="_blank" />
+
+                                        <!-- 11. Adres -->
+                                        <Text
+                                            text="{submissions>address}"
+                                            maxLines="2" />
+
+                                        <!-- 12. Notlar -->
+                                        <Text
+                                            text="{submissions>notes}"
+                                            maxLines="2" />
+                                    </cells>
+                                </ColumnListItem>
+                            </items>
+                        </Table>
+                    </content>
+                </IconTabBar>
             </VBox>
         </content>
     </Page>
