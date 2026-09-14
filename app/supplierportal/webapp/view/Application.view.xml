@@ -6,6 +6,7 @@
   xmlns:form="sap.ui.layout.form"
   xmlns:core="sap.ui.core"
   xmlns:u="sap.ui.unified"
+  xmlns:commons="sap.suite.ui.commons"
   height="100%">
   <Page
     id="applicationPage"
@@ -33,7 +34,7 @@
     <content>
       <VBox class="sapUiResponsiveMargin">
 
-        <!-- Bilgilendirme Çubuğu -->
+        <!-- Bilgilendirme Çubuğu (Yalnızca Form Görünürken) -->
         <MessageStrip
           id="formNoticeBar"
           text="{i18n>formNoticeBar}"
@@ -62,65 +63,112 @@
           showIcon="true"
           class="sapUiSmallMarginBottom" />
 
-        <!-- DURUM 1: Mevcut Başvurusu Bulunan Tedarikçi Bilgilendirme Kartı -->
+        <!-- =================================================================== -->
+        <!-- DURUM 1: Mevcut Başvuru Durumu ve 3 Aşamalı ProcessFlow Akışı         -->
+        <!-- =================================================================== -->
         <f:Card
           id="existingSubmissionCard"
           width="100%"
           visible="{appView>/hasExistingSubmission}">
           <f:header>
             <f:cards.Header
-              title="{i18n>existingSubmissionTitle}"
-              subtitle="{i18n>appPlaceholderDesc}"
-              iconSrc="sap-icon://pending" />
+              title="{i18n>processFlowTitle}"
+              subtitle="{appView>/existingSubmission/companyName}"
+              iconSrc="{appView>/existingSubmission/statusIcon}" />
           </f:header>
           <f:content>
             <VBox class="sapUiMediumMargin">
+              <!-- Durum Özel Bilgilendirme Notu -->
               <MessageStrip
-                text="{i18n>existingSubmissionNotice}"
-                type="Information"
+                id="statusNoticeStrip"
+                text="{appView>/existingSubmission/statusNotice}"
+                type="{appView>/existingSubmission/noticeType}"
                 showIcon="true"
                 class="sapUiSmallMarginBottom" />
 
-              <HBox alignItems="Center" class="sapUiSmallMarginBottom">
-                <Text text="{i18n>existingStatusLabel}" class="sapUiTinyMarginEnd" />
-                <ObjectStatus
-                  id="existingStatusBadge"
-                  text="{appView>/existingSubmission/statusText}"
-                  state="{appView>/existingSubmission/statusState}"
-                  icon="{appView>/existingSubmission/statusIcon}" />
+              <!-- Reddedilme Durumunda Onaycının Gerçek Karar Notu / Gerekçesi -->
+              <MessageStrip
+                id="rejectionReasonStrip"
+                visible="{= ${appView>/existingSubmission/status} === 'Rejected' &amp;&amp; !!${appView>/existingSubmission/rejectionReason} }"
+                text="{i18n>rejectionBannerTitle}: {appView>/existingSubmission/rejectionReason}"
+                type="Error"
+                showIcon="true"
+                class="sapUiSmallMarginBottom" />
+
+              <!-- Başvuru Temel Özeti -->
+              <HBox alignItems="Center" justifyContent="SpaceBetween" wrap="Wrap" class="sapUiSmallMarginBottom">
+                <VBox class="sapUiSmallMarginEnd">
+                  <Text text="{i18n>companyNameLabel}" />
+                  <Title text="{appView>/existingSubmission/companyName}" level="H3" titleStyle="H4" />
+                </VBox>
+                <VBox class="sapUiSmallMarginEnd">
+                  <Text text="{i18n>contactPersonLabel}" />
+                  <Text text="{appView>/existingSubmission/contactPerson}" />
+                </VBox>
+                <VBox class="sapUiSmallMarginEnd">
+                  <Text text="{i18n>categoryLabel}" />
+                  <Text text="{appView>/existingSubmission/category}" />
+                </VBox>
+                <VBox class="sapUiSmallMarginEnd">
+                  <Text text="{i18n>existingSubmissionDate}" />
+                  <Text text="{appView>/existingSubmission/submissionDate}" />
+                </VBox>
+                <VBox>
+                  <Text text="{i18n>existingStatusLabel}" />
+                  <ObjectStatus
+                    id="existingStatusBadge"
+                    text="{appView>/existingSubmission/statusText}"
+                    state="{appView>/existingSubmission/statusState}"
+                    icon="{appView>/existingSubmission/statusIcon}" />
+                </VBox>
               </HBox>
 
-              <HBox alignItems="Center" class="sapUiSmallMarginBottom">
-                <Text text="{i18n>companyNameLabel}: " class="sapUiTinyMarginEnd" />
-                <Text text="{appView>/existingSubmission/companyName}" />
-              </HBox>
+              <!-- 3 Aşamalı SAPUI5 ProcessFlow Akışı -->
+              <Panel headerText="{i18n>processFlowTitle}" expandable="false" class="sapUiSmallMarginBottom">
+                <commons:ProcessFlow
+                  id="processFlow"
+                  scrollable="false"
+                  foldedCorners="true"
+                  nodes="{appView>/processFlow/nodes}"
+                  lanes="{appView>/processFlow/lanes}">
+                  <commons:nodes>
+                    <commons:ProcessFlowNode
+                      nodeId="{appView>id}"
+                      laneId="{appView>lane}"
+                      title="{appView>title}"
+                      titleAbbreviation="{appView>titleAbbreviation}"
+                      state="{appView>state}"
+                      stateText="{appView>stateText}"
+                      texts="{appView>texts}"
+                      children="{appView>children}"
+                      highlighted="{appView>highlighted}" />
+                  </commons:nodes>
+                  <commons:lanes>
+                    <commons:ProcessFlowLaneHeader
+                      laneId="{appView>id}"
+                      iconSrc="{appView>icon}"
+                      text="{appView>label}"
+                      position="{appView>position}"
+                      state="{appView>state}" />
+                  </commons:lanes>
+                </commons:ProcessFlow>
+              </Panel>
 
-              <HBox alignItems="Center" class="sapUiSmallMarginBottom">
-                <Text text="{i18n>contactPersonLabel}: " class="sapUiTinyMarginEnd" />
-                <Text text="{appView>/existingSubmission/contactPerson}" />
+              <HBox justifyContent="End" class="sapUiSmallMarginTop">
+                <Button
+                  id="btnRefreshProcess"
+                  text="{i18n>btnRefreshProcessFlow}"
+                  icon="sap-icon://refresh"
+                  type="Emphasized"
+                  press=".onRefreshStatus" />
               </HBox>
-
-              <HBox alignItems="Center" class="sapUiSmallMarginBottom">
-                <Text text="{i18n>categoryLabel}: " class="sapUiTinyMarginEnd" />
-                <Text text="{appView>/existingSubmission/category}" />
-              </HBox>
-
-              <HBox alignItems="Center" class="sapUiSmallMarginBottom">
-                <Text text="{i18n>existingSubmissionDate} " class="sapUiTinyMarginEnd" />
-                <Text text="{appView>/existingSubmission/submissionDate}" />
-              </HBox>
-
-              <Button
-                text="{i18n>btnGoToStatus}"
-                icon="sap-icon://refresh"
-                type="Emphasized"
-                press=".onRefreshStatus"
-                class="sapUiSmallMarginTop" />
             </VBox>
           </f:content>
         </f:Card>
 
-        <!-- DURUM 2: İlk Başvuru Formu (Gruplandırılmış SimpleForm) -->
+        <!-- =================================================================== -->
+        <!-- DURUM 2: İlk Başvuru Formu (Gruplandırılmış SimpleForm)             -->
+        <!-- =================================================================== -->
         <f:Card
           id="newApplicationCard"
           width="100%"

@@ -17,6 +17,10 @@ sap.ui.define([
         isAuthenticated: false,
         hasExistingSubmission: false,
         existingSubmission: null,
+        processFlow: {
+          lanes: [],
+          nodes: []
+        },
         isBusy: false,
         hasError: false,
         errorMessage: "",
@@ -86,9 +90,30 @@ sap.ui.define([
             submission.statusText = statusMeta.text;
             submission.statusState = statusMeta.state;
             submission.statusIcon = statusMeta.icon;
+            submission.statusNotice = statusMeta.notice;
+            submission.noticeType = statusMeta.noticeType;
+            if (submission.createdAt) {
+              try {
+                submission.submissionDate = new Date(submission.createdAt).toLocaleDateString();
+              } catch (e) {
+                submission.submissionDate = submission.createdAt;
+              }
+            } else {
+              submission.submissionDate = "-";
+            }
 
-            oModel.setProperty("/hasExistingSubmission", true);
+            var oProcessFlowData = this._buildProcessFlow(submission.status, submission, oBundle);
+            oModel.setProperty("/processFlow", oProcessFlowData);
             oModel.setProperty("/existingSubmission", submission);
+            oModel.setProperty("/hasExistingSubmission", true);
+
+            setTimeout(function () {
+              var oPF = this.byId("processFlow");
+              if (oPF && typeof oPF.updateModel === "function") {
+                oPF.updateModel();
+              }
+            }.bind(this), 0);
+
             return;
           }
         }
@@ -96,31 +121,178 @@ sap.ui.define([
         // Başvuru yok (204 No Content veya boş)
         oModel.setProperty("/hasExistingSubmission", false);
         oModel.setProperty("/existingSubmission", null);
+        oModel.setProperty("/processFlow", { lanes: [], nodes: [] });
       } catch (err) {
         // Ağ hatası veya backend hatası
         oModel.setProperty("/hasExistingSubmission", false);
+        oModel.setProperty("/existingSubmission", null);
+        oModel.setProperty("/processFlow", { lanes: [], nodes: [] });
       }
     },
 
     _mapStatusMetadata: function (sStatus, oBundle) {
       switch (sStatus) {
         case "Pending":
-          return { text: oBundle.getText("statusPending"), state: "Warning", icon: "sap-icon://pending" };
+          return {
+            text: oBundle.getText("statusPending"),
+            state: "Warning",
+            icon: "sap-icon://pending",
+            notice: oBundle.getText("statusNoticePending"),
+            noticeType: "Information"
+          };
         case "InReview":
-          return { text: oBundle.getText("statusInReview"), state: "Information", icon: "sap-icon://in-progress" };
+          return {
+            text: oBundle.getText("statusInReview"),
+            state: "Information",
+            icon: "sap-icon://in-progress",
+            notice: oBundle.getText("statusNoticeInReview"),
+            noticeType: "Information"
+          };
         case "Approved":
-          return { text: oBundle.getText("statusApproved"), state: "Success", icon: "sap-icon://accept" };
+          return {
+            text: oBundle.getText("statusApproved"),
+            state: "Success",
+            icon: "sap-icon://accept",
+            notice: oBundle.getText("statusNoticeApproved"),
+            noticeType: "Success"
+          };
         case "Rejected":
-          return { text: oBundle.getText("statusRejected"), state: "Error", icon: "sap-icon://decline" };
+          return {
+            text: oBundle.getText("statusRejected"),
+            state: "Error",
+            icon: "sap-icon://decline",
+            notice: oBundle.getText("statusNoticeRejected"),
+            noticeType: "Error"
+          };
         default:
-          return { text: sStatus || "", state: "None", icon: "sap-icon://status-inactive" };
+          return {
+            text: sStatus || "",
+            state: "None",
+            icon: "sap-icon://status-inactive",
+            notice: "",
+            noticeType: "None"
+          };
       }
     },
 
-    onRefreshStatus: function () {
-      this._loadExistingSubmission();
+    _buildProcessFlow: function (sStatus, oSubmission, oBundle) {
+      // 3 Aşamalı Süreç Şeritleri (Lanes: Gönderildi -> İncelemede -> Sonuç)
+      var aLanes = [
+        {
+          id: "lane-0",
+          icon: "sap-icon://request",
+          label: oBundle.getText("processStepSubmitted"),
+          position: 0,
+          state: [{ state: "Positive", value: 1 }]
+        },
+        {
+          id: "lane-1",
+          icon: "sap-icon://inspection",
+          label: oBundle.getText("processStepReview"),
+          position: 1,
+          state: [{
+            state: sStatus === "Pending" ? "Planned" : (sStatus === "InReview" ? "Neutral" : "Positive"),
+            value: 1
+          }]
+        },
+        {
+          id: "lane-2",
+          icon: "sap-icon://complete",
+          label: oBundle.getText("processStepDecision"),
+          position: 2,
+          state: [{
+            state: (sStatus === "Approved" ? "Positive" : (sStatus === "Rejected" ? "Negative" : "Planned")),
+            value: 1
+          }]
+        }
+      ];
+
+      // Düğüm 1: Başvuru Gönderildi (Her zaman Positive)
+      var oNode1 = {
+        id: "node-1",
+        lane: "lane-0",
+        title: oBundle.getText("processStepSubmitted"),
+        titleAbbreviation: "1",
+        state: "Positive",
+        stateText: oBundle.getText("processStepSubmitted"),
+        texts: [oBundle.getText("processStepSubmittedDesc")],
+        children: ["node-2"],
+        highlighted: sStatus === "Pending"
+      };
+
+      // Düğüm 2: İncelemede
+      var sNode2State = "Planned";
+      var sNode2StateText = oBundle.getText("processStepReview");
+      var bNode2Highlighted = false;
+
+      if (sStatus === "InReview") {
+        sNode2State = "Neutral";
+        sNode2StateText = oBundle.getText("statusInReview");
+        bNode2Highlighted = true;
+      } else if (sStatus === "Approved" || sStatus === "Rejected") {
+        sNode2State = "Positive";
+        sNode2StateText = oBundle.getText("statusInReview");
+        bNode2Highlighted = false;
+      }
+
+      var oNode2 = {
+        id: "node-2",
+        lane: "lane-1",
+        title: oBundle.getText("processStepReview"),
+        titleAbbreviation: "2",
+        state: sNode2State,
+        stateText: sNode2StateText,
+        texts: [oBundle.getText("processStepReviewDesc")],
+        children: ["node-3"],
+        highlighted: bNode2Highlighted
+      };
+
+      // Düğüm 3: Sonuç / Karar
+      var sNode3Title = oBundle.getText("processStepDecision");
+      var sNode3State = "Planned";
+      var sNode3StateText = oBundle.getText("processStepDecision");
+      var aNode3Texts = [oBundle.getText("processStepDecisionDesc")];
+      var bNode3Highlighted = false;
+
+      if (sStatus === "Approved") {
+        sNode3Title = oBundle.getText("processStepApproved");
+        sNode3State = "Positive";
+        sNode3StateText = oBundle.getText("statusApproved");
+        aNode3Texts = [oBundle.getText("processStepApprovedDesc")];
+        bNode3Highlighted = true;
+      } else if (sStatus === "Rejected") {
+        sNode3Title = oBundle.getText("processStepRejected");
+        sNode3State = "Negative";
+        sNode3StateText = oBundle.getText("statusRejected");
+        var sRejectionDesc = (oSubmission && oSubmission.rejectionReason)
+          ? (oBundle.getText("rejectionReasonNotice") + " " + oSubmission.rejectionReason)
+          : oBundle.getText("processStepRejectedDesc");
+        aNode3Texts = [sRejectionDesc];
+        bNode3Highlighted = true;
+      }
+
+      var oNode3 = {
+        id: "node-3",
+        lane: "lane-2",
+        title: sNode3Title,
+        titleAbbreviation: "3",
+        state: sNode3State,
+        stateText: sNode3StateText,
+        texts: aNode3Texts,
+        children: [],
+        highlighted: bNode3Highlighted
+      };
+
+      return {
+        lanes: aLanes,
+        nodes: [oNode1, oNode2, oNode3]
+      };
+    },
+
+    onRefreshStatus: async function () {
       var oBundle = this.getView().getModel("i18n").getResourceBundle();
-      MessageToast.show(oBundle.getText("refreshButton"));
+      await this._loadExistingSubmission();
+      MessageToast.show(oBundle.getText("btnRefreshProcessFlow"));
     },
 
     onInputChange: function () {

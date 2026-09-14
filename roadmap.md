@@ -96,7 +96,7 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
 * [x] **Adım 5.3: Başvuru Formu ve Sertifika Yükleme (Application View)**
   * Gruplandırılmış `SimpleForm`, belirgin zorunlu alan işaretleri.
   * `FileUploader`: Ön bilgilendirme (*"Yalnızca PDF ve en fazla 10 MB"*), dosya seçildiği an anlık format/boyut kontrolü, backend streaming ile gerçek PDF yükleme.
-* [ ] **Adım 5.4: Kalıcı Süreç Akışı (ProcessFlow)**
+* [x] **Adım 5.4: Kalıcı Süreç Akışı (ProcessFlow)**
   * Başvuru gönderildiği an formun kaybolması ve yerine 3 adımlı `ProcessFlow` gelmesi.
   * Kullanıcı sayfayı yenilediğinde veya çıkıp tekrar girdiğinde form yerine doğrudan güncel başvuru durumunun gelmesi.
 * [ ] **Adım 5.5: Korumalı Yeniden Başvuru (Re-apply)**
