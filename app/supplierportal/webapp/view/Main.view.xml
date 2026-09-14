@@ -1,0 +1,99 @@
+<mvc:View
+    controllerName="codeup.supplier.portal.controller.Main"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:f="sap.f"
+    xmlns:card="sap.f.cards"
+    xmlns:layout="sap.ui.layout"
+    xmlns:core="sap.ui.core"
+    displayBlock="true">
+
+    <Page
+        id="mainPage"
+        title="{i18n>appTitle}"
+        showNavButton="false">
+        <headerContent>
+            <ObjectStatus
+                text="{i18n>systemStatusReady}"
+                state="Success"
+                icon="sap-icon://sys-enter-2"
+                class="sapUiSmallMarginEnd" />
+        </headerContent>
+
+        <content>
+            <VBox class="sapUiResponsiveMargin">
+                <!-- Welcome Section -->
+                <Panel
+                    accessibleRole="Region"
+                    backgroundDesign="Translucent"
+                    class="sapUiSmallMarginBottom">
+                    <headerToolbar>
+                        <Toolbar height="3rem">
+                            <core:Icon src="sap-icon://supplier" class="sapUiSmallMarginBegin" />
+                            <Title text="{i18n>welcomeTitle}" level="H2" class="sapUiTinyMarginBegin" />
+                            <ToolbarSpacer />
+                            <ObjectStatus
+                                title="{i18n>systemStatusLabel}"
+                                text="{i18n>systemStatusReady}"
+                                state="Success" />
+                        </Toolbar>
+                    </headerToolbar>
+                    <VBox class="sapUiSmallMargin">
+                        <Text text="{i18n>welcomeSubtitle}" class="sapUiTinyMarginBottom" />
+                        <MessageStrip
+                            text="{i18n>systemStatusDesc}"
+                            type="Success"
+                            showIcon="true"
+                            showCloseButton="false"
+                            class="sapUiTinyMarginTop" />
+                    </VBox>
+                </Panel>
+
+                <!-- Architecture Capabilities Overview -->
+                <Panel
+                    accessibleRole="Region"
+                    backgroundDesign="Transparent"
+                    class="sapUiSmallMarginBottom">
+                    <headerToolbar>
+                        <Toolbar height="2.5rem">
+                            <Title text="{i18n>featuresHeader}" level="H3" />
+                        </Toolbar>
+                    </headerToolbar>
+                    <layout:Grid
+                        defaultSpan="XL4 L4 M4 S12"
+                        class="sapUiNoContentPadding">
+                        <!-- Capability 1 -->
+                        <f:Card class="sapUiTinyMargin">
+                            <f:header>
+                                <card:Header
+                                    title="{i18n>feature1Title}"
+                                    subtitle="{i18n>feature1Desc}"
+                                    iconSrc="sap-icon://building" />
+                            </f:header>
+                        </f:Card>
+
+                        <!-- Capability 2 -->
+                        <f:Card class="sapUiTinyMargin">
+                            <f:header>
+                                <card:Header
+                                    title="{i18n>feature2Title}"
+                                    subtitle="{i18n>feature2Desc}"
+                                    iconSrc="sap-icon://validate" />
+                            </f:header>
+                        </f:Card>
+
+                        <!-- Capability 3 -->
+                        <f:Card class="sapUiTinyMargin">
+                            <f:header>
+                                <card:Header
+                                    title="{i18n>feature3Title}"
+                                    subtitle="{i18n>feature3Desc}"
+                                    iconSrc="sap-icon://process" />
+                            </f:header>
+                        </f:Card>
+                    </layout:Grid>
+                </Panel>
+            </VBox>
+        </content>
+    </Page>
+</mvc:View>

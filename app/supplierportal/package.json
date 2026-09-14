@@ -1,0 +1,8 @@
+{
+  "name": "supplierportal",
+  "version": "1.0.0",
+  "description": "Supplier Portal - Tedarikçi Onboarding ve Başvuru Portalı (SAPUI5 Freestyle)",
+  "private": true,
+  "scripts": {},
+  "dependencies": {}
+}
