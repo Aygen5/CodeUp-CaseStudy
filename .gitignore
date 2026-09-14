@@ -13,7 +13,7 @@ vcap-local.json
 
 # Local Databases (SQLite)
 *.db
-*.sqlite
+*.sqlite*
 *.sqlite3
 
 # Build & Dist Outputs

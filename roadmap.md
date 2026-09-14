@@ -61,7 +61,7 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
 ## 📌 FAZ 4: CAP Backend Servisleri ve İş Mantığı (OData V4)
 *Bu fazda backend tamamen çalışır ve gerçek veritabanıyla test edilebilir hale gelir.*
 
-* [ ] **Adım 4.1: `PublicService` İmplementasyonu (`srv/public-service.cds` & `.js`)**
+* [x] **Adım 4.1: `PublicService` İmplementasyonu (`srv/public-service.cds` & `.js`)**
   * `register`: Mükerrer e-posta kontrolü, 5 kurallı şifre kontrolü, `bcryptjs` ile hash'leme.
   * `login`: Parola doğrulama ve güvenli tedarikçi oturumunun başlatılması.
   * `getMySubmission`: Tedarikçinin **sadece kendi başvurusunu** okuyabilmesini sağlayan mülkiyet filtresi.

@@ -25,6 +25,11 @@
       "db": {
         "kind": "sqlite"
       }
+    },
+    "server": {
+      "body_parser": {
+        "limit": "20mb"
+      }
     }
   }
 }
