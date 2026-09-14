@@ -75,12 +75,12 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
 * [x] **Adım 4.3: BTP `gemini` Destination ve AI Karar Destek Entegrasyonu**
   * `cds.connect.to('gemini')` çağrısı (API anahtarı BTP Destination başlığında, kodda yok).
   * PDF belgesinden geçerlilik analizi: AI'ın geçerlilik durumu, önerilen karar (*Öneri: Onayla* / *Öneri: Reddet*), gerekçe ve önerilen revizyon alanlarını içeren zengin bir **karar destek raporu** döndürmesi.
-* [ ] **Adım 4.4: Backend Servislerinin Uçtan Uca API Testi (Port :4004 Canlı Erişimi)**
+* [x] **Adım 4.4: Backend Servislerinin Uçtan Uca API Testi (Port :4004 Canlı Erişimi)**
   * `cds watch` ile servis uçlarının, validasyonların ve action'ların yerel olarak doğrulanması.
   * **Projenin Canlı Görülme Takvimi — 1. Aşama (Port 4004):**
-    * Faz 4'ün sonunda (Adım 4.4) terminalden `cds watch` komutunu çalıştıracağız.
-    * Tarayıcınızda `http://localhost:4004` açılacak!
-    * Burada OData V4 servislerimizi (`/odata/v4/public` ve `/odata/v4/approval`), yüklediğimiz 12 kurumsal tedarikçi verisini, metadata belgelerini ve servis fonksiyonlarını canlı olarak test edebileceğiz.
+    * Faz 4'ün sonunda (Adım 4.4) terminalden `cds watch` komutunu çalıştırdık.
+    * Tarayıcınızda `http://localhost:4004` açıldı!
+    * Burada OData V4 servislerimizi (`/odata/v4/public` ve `/odata/v4/approval`), yüklediğimiz 12 kurumsal tedarikçi verisini, metadata belgelerini ve servis fonksiyonlarını canlı olarak test edip doğruladık.
 
 ---
 

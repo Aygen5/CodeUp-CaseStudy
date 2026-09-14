@@ -25,6 +25,21 @@
       "db": {
         "kind": "sqlite"
       },
+      "auth": {
+        "kind": "mocked",
+        "users": {
+          "approver": {
+            "roles": [
+              "Approval"
+            ]
+          },
+          "unauthorized_user": {
+            "roles": [
+              "StandardUser"
+            ]
+          }
+        }
+      },
       "gemini": {
         "kind": "rest",
         "credentials": {
