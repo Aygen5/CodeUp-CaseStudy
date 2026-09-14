@@ -340,4 +340,122 @@ Uygulama cloud'a deploy edilmeyecek, yerel geliştirme ortamında (localhost) ç
 5. **Tedarikçi Mülkiyet İzolasyonu (Supplier Data Ownership):** Bir tedarikçi asla başka bir tedarikçinin başvurusunu göremez veya güncelleyemez (`Supplier A` $\not\to$ `Supplier B`). Veri sorguları backend katmanında oturumdaki tedarikçi kimliği (`supplier_ID = req.supplier.id`) ile filtrelenir.
 
 ---
+
+## 14. Tedarikçi Kimlik, Oturum ve Mülkiyet İzolasyonu Mimarisi (Adım 3.3)
+
+Bu bölüm, dış tedarikçilerin sisteme kaydolmasından başvuru süreçlerini tamamlamasına kadar geçen tüm yaşam döngüsünde kimlik doğrulama, oturum yönetimi ve mülkiyet izolasyonunu (`Supplier A` $\not\to$ `Supplier B`) garanti eden teknik mimari kararlarını tanımlar.
+
+### 14.1. Üç Katmanlı Güvenlik Ayrımı (AuthN vs Session vs AuthZ)
+
+Sistemin tedarikçi tarafındaki güvenliği birbirinden bağımsız 3 temel mekanizma üzerine inşa edilir:
+
+1. **Authentication (Kimlik Doğrulama - "Sen kimsin?"):**
+   * Tedarikçi sisteme kayıt olurken (`register`) e-posta ve şifresi alınır. Şifre, backend katmanında `bcryptjs` ile (salt rounds: 10) tek yönlü olarak hash'lenerek `Suppliers.passwordHash` alanına kaydedilir.
+   * Giriş sırasında (`login`) girilen e-posta üzerinden veritabanından tedarikçi kaydı bulunur ve şifre `bcrypt.compare` ile doğrulanır.
+2. **Session / Identity State (Oturum Durumu - "Kim olduğunu nasıl hatırlıyoruz?"):**
+   * Giriş başarılı olduğunda, sunucu tarafında imzalanmış **Uygulama Düzeyinde Tedarikçi Kimlik Belirteci (Stateless Supplier Identity Token / JWT)** üretilir.
+   * Bu belirteç istemciye teslim edilir ve sonraki tüm HTTP/OData isteklerinde istemci tarafından geri gönderilir.
+3. **Authorization / Ownership (Mülkiyet Yetkilendirmesi - "Hangi veriye dokunabilirsin?"):**
+   * Backend, gelen her isteğin başlığındaki belirteci doğrular ve içerisindeki `supplierId` bilgisini CAP istek bağlamına (`req.supplier = { id, email }`) yazar.
+   * Veritabanı sorguları ve mutasyonları asla istemcinin gönderdiği parametrelere göre değil, yalnızca bu doğrulanmış `req.supplier.id` bağlamına göre işletilir.
+
+---
+
+### 14.2. Oturum Mekanizması Seçimi ve Mimari Değerlendirme
+
+Mevcut CAP + Approuter (`:5000`) + SAPUI5 yapısı dikkate alınarak olası oturum mekanizmaları karşılaştırılmıştır:
+
+| Mekanizma | Nasıl Çalışır? | Avantajları | Dezavantajları / Riskleri | Karar |
+| :--- | :--- | :--- | :--- | :--- |
+| **Server-Side Session (Memory/Store)** | Express-session / `connect.sid` cookie ile sunucu belleğinde veya Redis'te oturum tutulur. | Sunucu tarafında anlık iptal (invalidation) kolaydır. | Cloud Foundry / BTP ortamında birden fazla pod/instance çalıştığında session replication / Redis gerektirir; mimari karmaşıklığı ve maliyeti artırır. | ❌ Reddedildi |
+| **BTP XSUAA'ya Tedarikçi Ekleme** | Dış tedarikçiler BTP Identity Provider'a (IAS) kullanıcı olarak açılır. | XSUAA standartlarını kullanır. | Case Study gereksinimlerine aykırıdır; tedarikçiler harici paydaşlardır, BTP kullanıcısı açılması kurumsal maliyet ve lisans açısından kabul edilemez. | ❌ Reddedildi |
+| **Stateless İmzalı Tedarikçi Belirteci (JWT / Secure Token)** | Giriş sonrası sunucu tarafında gizli anahtarla imzalanmış, `{ supplierId, email, exp }` içeren kompakt bir belirteç üretilir. | **Stateless:** Sunucu belleği veya Redis gerektirmez. Horizontal scaling (ölçeklenme) ile %100 uyumludur. CAP Node.js mimarisine tam oturur. BTP XSUAA ile çakışmaz. | Token çalınırsa süresi dolana kadar geçerlidir (TTL makul tutularak ve HTTPS ile korunarak risk minimize edilir). | ✅ **SEÇİLDİ** |
+
+#### Taşıma Yöntemi (Transport Layer):
+* **Birincil Yaklaşım:** `Authorization: Bearer <supplierToken>` veya özel HTTP başlığı (`x-supplier-token`).
+* **Alternatif / Hibrit:** `HttpOnly; SameSite=Lax; Secure` cookie (`supplier_token`).
+* > [!NOTE]
+  > **Implementasyon Sırasında Doğrulanacak Nokta:**
+  > Approuter (`@sap/approuter`) `5000` portunda `authenticationType: none` rotalarında gelen custom `Authorization` başlıklarını veya `x-supplier-token` başlığını backend'e (`:4004`) doğrudan iletir. Faz 4 ve Faz 7 implementasyonu sırasında, UI5 OData V4 modelinin başlık ekleme davranışı ile Approuter'ın proxy başlık iletimi canlı test edilerek nihai taşıyıcı formatı (Header vs Cookie) kesinleştirilecektir.
+
+---
+
+### 14.3. BTP XSUAA ile Tedarikçi Kimlik Modelinin Kesin Ayrımı
+
+Sistemde iki farklı kimlik otoritesi bulunur ve birbirlerinin alanına asla müdahale etmez:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                              İKİ AYRI KİMLİK OTORİTESİ                                 │
+├───────────────────────────────────────────┬────────────────────────────────────────────┤
+│   Dış Tedarikçi Portalı (Supplier Portal) │   İç Onaycı Portalı (Supplier Approvals)   │
+├───────────────────────────────────────────┼────────────────────────────────────────────┤
+│ • Kimlik Deposu: db.Suppliers Tablosu     │ • Kimlik Deposu: SAP BTP Identity Provider │
+│ • Parola Doğrulama: bcryptjs (Backend)    │ • Kimlik Doğrulama: BTP XSUAA (OAuth 2.0)  │
+│ • Oturum: Uygulama İmzalı Supplier Token │ • Oturum: XSUAA JWT Bearer Token           │
+│ • Yetki Tipi: Mülkiyet (Supplier Ownership)│ • Yetki Tipi: Rol Bazlı (@requires: 'Approval')│
+│ • Servis Yolu: /odata/v4/public/**        │ • Servis Yolu: /odata/v4/approval/**       │
+│ • Approuter Ayarı: authenticationType: none│ • Approuter Ayarı: authenticationType: xsuaa│
+└───────────────────────────────────────────┴────────────────────────────────────────────┘
+```
+
+* Tedarikçi şifreleri asla XSUAA'ya taşınmaz; veritabanında `passwordHash` olarak korunur.
+* XSUAA `Approval` rolü dış tedarikçiye atanmaz; tedarikçinin bu role ihtiyacı yoktur.
+
+---
+
+### 14.4. Identity $\rightarrow$ Supplier Eşleşmesi ve "İstemciye Güvenme" İlkesi
+
+* **E-Posta Tek Başına Kimlik Olamaz:** E-posta değişken veya sorgu parametresi olarak manipüle edilebilir.
+* **Kanonik Kimlik:** Sistemin değişmez kimlik anahtarı `Suppliers.ID` (UUID) alanıdır.
+* **Eşleşme Süreci:**
+  1. `login` action'ında e-posta ve şifre doğrulanır.
+  2. Veritabanından tedarikçinin tekil `Supplier.ID`'si okunur.
+  3. Token payload'ına `{ supplierId: supplier.ID, email: supplier.email }` yazılır ve imzalanır.
+  4. Sonraki her istekte backend, belirtecin imzasını doğrular ve `req.supplier.id = payload.supplierId` olarak bağlamı kurar.
+* > [!CAUTION]
+  > **Asla İstemci Parametresine Güvenilmez:**
+  > Frontend'den gelen `?supplierId=...` sorgu parametresi veya istek gövdesindeki `supplier_ID` alanı güvenlik kontrollerinde **asla dikkate alınmaz**. Veri tabanına yazılırken veya filtrelenirken yalnızca doğrulanmış oturumdaki `req.supplier.id` kullanılır.
+
+---
+
+### 14.5. Backend Mülkiyet İzolasyonu (Backend Ownership Enforcement)
+
+`PublicService` üzerindeki tüm operasyonlarda backend iş mantığı seviyesinde şu kurallar tavizsiz uygulanır:
+
+1. **Başvuru Okuma (`getMySubmission`):**
+   * Tedarikçi genel bir listeleme (`GET /Submissions`) yapamaz; entity seti dışarıya kapalıdır.
+   * `getMySubmission` fonksiyonu doğrudan şu CQL sorgusunu işletir:
+     $$\text{SELECT ONE FROM Submissions WHERE supplier\_ID = req.supplier.id}$$
+   * Sonuç: Tedarikçi yalnızca ve yalnızca kendi başvurusunu görür. Başka tedarikçinin verisine erişmesi imkansızdır.
+
+2. **Başvuru Oluşturma (`createSubmission`):**
+   * Backend önce `req.supplier.id` için önceden açılmış bir başvuru olup olmadığını kontrol eder. Varsa mükerrer başvuru engellenir.
+   * Yeni başvuru oluşturulurken `supplier_ID` alanına doğrudan `req.supplier.id` enjekte edilir. İstemci başka bir tedarikçi adına kayıt oluşturamaz.
+
+3. **Korumalı Yeniden Başvuru (`reApplySubmission`):**
+   * Başvurusu reddedilen tedarikçinin düzeltme yapıp tekrar başvurması sürecinde 3 katmanlı güvenlik doğrulaması yapılır:
+     1. **Mülkiyet Doğrulaması:** Güncellenmek istenen kaydın `supplier_ID` değeri ile `req.supplier.id` eşit olmalıdır. Eşit değilse `403 Forbidden`.
+     2. **Durum Doğrulaması:** Başvurunun veritabanındaki güncel durumu `Rejected` olmalıdır. `Pending`, `InReview` veya `Approved` durumundaki başvurular yeniden gönderilemez (`400 Bad Request`).
+     3. **Alan İzni Doğrulaması (Editable Fields Enforcement):** Onaycının reddederken belirlediği `editableFields` listesinde yer **almayan** hiçbir alanın güncellenmesine izin verilmez. İstemci kilitli bir alanı (örn. `companyName`) değiştirmeye çalışırsa backend işlemi reddeder.
+   * Güncelleme başarılı olduğunda başvuru durumu `InReview` (İncelemede) olarak güncellenir.
+
+---
+
+### 14.6. Oturum Yaşam Döngüsü ve Logout (Çıkış)
+
+* **Token Geçerlilik Süresi (TTL):** Tedarikçinin başvuru formunu doldurma ve dosya yükleme süresi dikkate alınarak belirteç geçerlilik süresi **8 saat** olarak yapılandırılır.
+* **Logout Mantığı:**
+  * İstemci tarafında depolanan belirteç silinir (`sessionStorage.removeItem` veya cookie silme).
+  * Kullanıcı arayüzü anında login ekranına yönlendirilir.
+  * Sunucu tarafında durum tutulmadığı için çıkış işlemi istemci tarafındaki belirtecin imhası ile güvenli ve anlık olarak tamamlanır.
+
+---
+
+### 14.7. Faz 4 Implementasyonu Sırasında Doğrulanacak Noktalar
+1. CAP Node.js özel auth middleware'inin (`cds.context.user`) tedarikçi oturumuyla entegrasyon yöntemi.
+2. Approuter'ın `:5000` portundaki `authenticationType: none` rotasında custom auth header veya cookie geçirme davranışının yerel test ortamında doğrulanması.
+3. SAPUI5 OData V4 Model'inin dosya akışında (PDF streaming) belirteç başlığını iletme davranışı.
+
+---
 *Bu rehber, projenin güvenlik sınırlarını ve BTP entegrasyon kurallarını kesinleştiren temel referans dokümandır.*

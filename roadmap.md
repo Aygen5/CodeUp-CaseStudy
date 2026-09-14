@@ -51,7 +51,7 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
   * `PublicService` (Dış tedarikçi işlemleri) ile `ApprovalService` (`@requires: 'Approval'`) arasındaki yetki sınırlarının deklaratif tasarımı.
 * [x] **Adım 3.2: `xs-security.json` Deklarasyonunun Hazırlanması**
   * BTP XSUAA için `Approval` scope, `Approval` role template ve `codeup Approval` role collection tanımlarının oluşturulması.
-* [ ] **Adım 3.3: Tedarikçi Kimlik ve Oturum Mimarisi Kararı (Supplier Auth Decision)**
+* [x] **Adım 3.3: Tedarikçi Kimlik ve Oturum Mimarisi Kararı (Supplier Auth Decision)**
   * Dış tedarikçinin login sonrasında mülkiyet izolasyonunu (Supplier A $\rightarrow$ Yalnızca A'nın başvurusunu görme/düzenleme) sağlayacak oturum mekanizmasının teknik olarak netleştirilmesi.
 * [ ] **Adım 3.4: Approuter Rota Mimarisi Tasarımı**
   * Public (`none`) ve Korumalı (`xsuaa`) URL rotalarının regex ve top-down öncelik sırasının belirlenmesi.
