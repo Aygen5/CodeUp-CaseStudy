@@ -1,0 +1,47 @@
+{
+  "authenticationMethod": "route",
+  "routes": [
+    {
+      "source": "^/odata/v4/public/(.*)$",
+      "target": "/odata/v4/public/$1",
+      "destination": "srv-api",
+      "authenticationType": "none",
+      "csrfProtection": false
+    },
+    {
+      "source": "^/odata/v4/approval/(.*)$",
+      "target": "/odata/v4/approval/$1",
+      "destination": "srv-api",
+      "authenticationType": "xsuaa",
+      "scope": "$XSAPPNAME.Approval",
+      "csrfProtection": false
+    },
+    {
+      "source": "^/supplierportal/(.*)$",
+      "target": "$1",
+      "localDir": "app/supplierportal/webapp",
+      "authenticationType": "none",
+      "cacheControl": "no-cache, no-store, must-revalidate"
+    },
+    {
+      "source": "^/supplier-approvals/(.*)$",
+      "target": "$1",
+      "localDir": "app/supplier-approvals/webapp",
+      "authenticationType": "xsuaa",
+      "scope": "$XSAPPNAME.Approval",
+      "cacheControl": "no-cache, no-store, must-revalidate"
+    },
+    {
+      "source": "^/appconfig/(.*)$",
+      "target": "$1",
+      "localDir": "app/appconfig",
+      "authenticationType": "none"
+    },
+    {
+      "source": "^/(.*)$",
+      "target": "$1",
+      "localDir": "app",
+      "authenticationType": "none"
+    }
+  ]
+}

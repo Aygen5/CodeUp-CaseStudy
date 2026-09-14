@@ -1,0 +1,28 @@
+{
+  "PORT": 5000,
+  "destinations": [
+    {
+      "name": "srv-api",
+      "url": "http://localhost:4004",
+      "forwardAuthToken": true
+    }
+  ],
+  "VCAP_SERVICES": {
+    "xsuaa": [
+      {
+        "name": "codeup-xsuaa",
+        "label": "xsuaa",
+        "tags": [
+          "xsuaa"
+        ],
+        "credentials": {
+          "xsappname": "codeup-supplier-management",
+          "clientid": "local-client",
+          "clientsecret": "local-secret",
+          "url": "http://localhost:5000/uaa",
+          "identityzone": "codeup-zone"
+        }
+      }
+    ]
+  }
+}

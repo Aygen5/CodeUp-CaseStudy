@@ -6,6 +6,7 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
+    "@sap/approuter": "^23.0.0",
     "@sap/cds": "^8",
     "@sap/xsenv": "^5",
     "@sap/xssec": "^4",
@@ -18,7 +19,8 @@
   },
   "scripts": {
     "start": "cds-serve",
-    "watch": "cds watch"
+    "watch": "cds watch",
+    "approuter": "node approuter.js"
   },
   "cds": {
     "requires": {
