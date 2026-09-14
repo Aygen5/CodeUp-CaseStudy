@@ -108,40 +108,100 @@ Bu işlem tamamlandığında kullanıcının bir sonraki oturumunda alacağı JW
 
 ---
 
-## 7. Approuter Rota Yapılandırması (`xs-app.json`) ve Rota Sıralaması
+## 7. Approuter Rota Mimarisi Tasarımı ve Güvenlik Öncelik Sıralaması (Adım 3.4)
 
-`xs-app.json`, Approuter'ın gelen URL isteklerini nasıl karşılayacağını ve kimlik doğrulama tipini belirler.
+Port **`5000`** üzerinde çalışan **`@sap/approuter`**, sistemin tek dış giriş kapısı (Reverse Proxy) olarak tüm web ve API trafiğini karşılar. Approuter'ın yönlendirme ve güvenlik denetimi kuralları `xs-app.json` dosyası üzerinden deklaratif olarak yönetilir.
 
-### İki Temel Kimlik Doğrulama Tipi:
-* **`authenticationType: none`:** Herkese açık rotalardır. BTP girişi istemez.
-* **`authenticationType: xsuaa`:** Korumalı rotalardır. XSUAA oturumu ve yetki kapsamı (`scope`) doğrulaması zorunludur.
+---
 
-### Rota Sıralamasının Hayati Önemi (Top-Down Matching):
+### 7.1. Detaylı Approuter Rota Tablosu (Route Architecture Table)
+
+Aşağıdaki tablo, projedeki tüm statik arayüz kaynaklarının ve OData servis uçlarının Approuter seviyesinde nasıl yönlendirileceğini ve korunacağını tanımlar. Tablo, **yukarıdan aşağıya (top-down) işletilme önceliğine göre** kesin olarak sıralanmıştır:
+
+| Sıra | Route (Source Regex) | Amaç | Authentication | Hedef (Target/Destination) | Gerekçe ve Güvenlik Sınırı |
+| :---: | :--- | :--- | :---: | :--- | :--- |
+| **1** | `^/odata/v4/public/(.*)$` | Dış Tedarikçi OData V4 Servis Uçları (`login`, `register`, `getMySubmission`, `createSubmission`, `reApplySubmission`) | `none` | `destination: srv-api`<br>`target: /odata/v4/public/$1` | Dış tedarikçiler BTP kullanıcısı değildir; API çağrıları BTP login duvarına çarpmamalıdır. Kimlik ve mülkiyet denetimi CAP katmanında tedarikçi token'ı ile yapılır. |
+| **2** | `^/odata/v4/approval/(.*)$` | İç Onaycı OData V4 Servis Uçları (Başvuru havuzu, onay/red/AI aksiyonları) | `xsuaa`<br>`scope: $XSAPPNAME.Approval` | `destination: srv-api`<br>`target: /odata/v4/approval/$1` | Yalnızca `codeup Approval` rol koleksiyonuna sahip BTP kullanıcıları API uçlarına erişebilir. Token taşımayan istekler 401, yetkisiz istekler 403 ile kapıda kesilir. |
+| **3** | `^/supplierportal/(.*)$` | Supplier Portal UI5 Statik Kaynakları (View, Controller, i18n, manifest) | `none` | `localDir: app/supplierportal`<br>`target: /$1` | Dış tedarikçi kayıt ve başvuru ekranlarının arayüz dosyalarıdır. Herkese açık olmalı, kimlik sormadan tarayıcıya indirilmelidir. |
+| **4** | `^/supplier-approvals/(.*)$` | Supplier Approvals UI5 Statik Kaynakları (Yönetim kokpiti, tablo, diyaloglar) | `xsuaa`<br>`scope: $XSAPPNAME.Approval` | `localDir: app/supplier-approvals`<br>`target: /$1` | Onaycı paneli kaynak kodlarının ve görünüm şablonlarının yetkisiz kullanıcılara sızmasını engeller. Arayüz indirilmeden önce XSUAA login zorunludur. |
+| **5** | `^/appconfig/(.*)$` | Fiori Launchpad Sandbox Yapılandırma Dosyaları (`fioriSandboxConfig.json`) | `none` | `localDir: app/appconfig`<br>`target: /$1` | Fiori sandbox ortamının kutucukları (tiles) ve navigasyon ayarlarını yükleyebilmesi için gereklidir. |
+| **6** | `^/(.*)$` | Fiori Launchpad Kabuğu (`index.html`) ve Kök Dizin Fallback | `none` | `localDir: app`<br>`target: /$1` | Launchpad ana sayfasını (`index.html#Shell-home`) karşılar. En genel kural olduğu için en altta yer almalıdır. |
+
+---
+
+### 7.2. Regex Tasarımı ve Top-Down Eşleşme Önceliği (Specific $\rightarrow$ General)
+
 > [!WARNING]
-> **Kritik Rota Kuralı:**
-> `xs-app.json` dosyası rotaları **yukarıdan aşağıya sırayla** (top-down regex) değerlendirir. İlk eşleşen kural işletilir ve arama durur. Sıralama hatası yapılırsa sistem güvenliği tamamen çöker.
+> **Approuter Top-Down Regex Çalışma İlkesi:**
+> Approuter gelen her HTTP isteğini `routes` dizisindeki kurallarla **ilk satırdan başlayarak aşağıya doğru** karşılaştırır.
+> URL ile eşleşen **İLK kural** işletilir ve sonraki kurallara asla bakılmaz.
+> Bu nedenle: **Özel rotalar (Specific) en üstte, genel rotalar (General / Catch-All) en altta yer almak zorundadır.**
+
+#### Regex Hassasiyet Kuralları:
+1. **Yol Ayracı ve Bitiş Kontrolü:**
+   * Rotalarda `^/supplier` gibi eksik ifadeler **asla kullanılmaz**; aksi takdirde hem `/supplierportal` hem de `/supplier-approvals` aynı kurala takılır.
+   * `^/supplierportal/(.*)$` ve `^/supplier-approvals/(.*)$` şeklinde tam dizin yolu ayracı (`/`) ve parantezli yakalama grubu (`(.*)$`) kullanılır.
+2. **API Rotalarının UI Rotalarından Önce Gelmesi:**
+   * Backend OData istekleri (`/odata/v4/...`) statik dosya yakalayıcılarından önce tanımlanır. Böylece API trafiğinin statik dosya arayan `localDir` handler'larına düşmesi engellenir.
+3. **Kök Dizin Kuralı (`^/(.*)$`) En Sonda Olmalıdır:**
+   * `^/(.*)$` kuralı her şeyi yakalayan bir açgözlü (greedy) regex'tir. Eğer bu kural listenin yukarısına konulursa altındaki tüm API ve UI rotaları ezilir ve sistem çöker.
+
+---
+
+### 7.3. Public (`none`) vs Korumalı (`xsuaa`) Sınırları
+
+* **Public Rota Sınırı (`authenticationType: none`):**
+  * Yalnızca `/supplierportal/**` arayüz dosyaları ile `/odata/v4/public/**` tedarikçi uçlarını kapsar.
+  * *Önemli Hatırlatma:* `none` ağ kapısında BTP kimlik doğrulamasının olmaması demektir. Bu rotalardaki veriler herkese açık değildir; Adım 3.3'te belirlenen **Stateless Tedarikçi Kimlik Belirteci (Supplier Token)** ve **Backend Mülkiyet Filtresi (`where supplier_ID = req.supplier.id`)** ile korunur.
+* **Korumalı Rota Sınırı (`authenticationType: xsuaa`):**
+  * Hem `/supplier-approvals/**` arayüzünü hem de `/odata/v4/approval/**` backend servisini kapsar.
+  * Çift yönlü kilit: Yetkisiz bir kullanıcı ne onay kokpitinin HTML/JS dosyalarını tarayıcısına indirebilir ne de doğrudan OData servisinden veri çekebilir.
+  * Her iki rota da doğrudan `$XSAPPNAME.Approval` scope denetimine bağlıdır.
+
+---
+
+### 7.4. Supplier Custom Auth ile BTP XSUAA'nın Ayrımı
+
+İki bağımsız kimlik ve yetkilendirme modeli Approuter seviyesinde birbirine asla karışmaz:
 
 ```
-İstek Gelir
-    │
-    ▼
-[ Kural 1: /supplierportal/** ] ──> Eşleşti mi? ──(EVET)──> authenticationType: none (AÇIK)
-    │ (HAYIR)
-    ▼
-[ Kural 2: /odata/v4/public/** ] ──> Eşleşti mi? ──(EVET)──> authenticationType: none (AÇIK)
-    │ (HAYIR)
-    ▼
-[ Kural 3: /supplier-approvals/** ] ──> Eşleşti mi? ──(EVET)──> authenticationType: xsuaa + Approval (KORUMALI)
-    │ (HAYIR)
-    ▼
-[ Kural 4: /odata/v4/approval/** ] ──> Eşleşti mi? ──(EVET)──> authenticationType: xsuaa + Approval (KORUMALI)
-    │ (HAYIR)
-    ▼
-[ Kural 5: Diğer Tüm İstekler / Shell ] ──> Varsayılan Launchpad Kuralları
+                          [ İstemci İsteği (:5000) ]
+                                      │
+                 ┌────────────────────┴────────────────────┐
+                 ▼ (Public Rota)                           ▼ (Korumalı Rota)
+        [/odata/v4/public/**]                    [/odata/v4/approval/**]
+                 │                                         │
+       [authenticationType: none]                [authenticationType: xsuaa]
+                 │                                         │
+                 │ (Proxy: Custom Token İletilir)          │ (XSUAA Login & Scope: Approval)
+                 ▼                                         ▼
+      [CAP: PublicService]                      [CAP: ApprovalService]
+     (req.supplier.id Denetimi)                (@requires: 'Approval' Kalkanı)
 ```
 
-* **Hatalı Sıralama Riski 1:** Eğer korumalı genel bir kural (örn. `/(.*)`) en üste yazılırsa, dış tedarikçiler BTP login duvarına çarpar; kayıt olamaz ve başvuru yapamaz.
-* **Hatalı Sıralama Riski 2:** Eğer çok geniş bir `none` kuralı en üste yazılırsa, `supplier-approvals` yönetim paneli ve onay servisleri yetkisiz herkese açık hale gelir.
+* **Header Çakışması Yoktur:** `/odata/v4/approval/**` rotasında Approuter XSUAA JWT token'ını `Authorization: Bearer` olarak backend'e taşır. `/odata/v4/public/**` rotasında ise Approuter BTP doğrulaması yapmaz; istemcinin gönderdiği tedarikçi oturum başlığını doğrudan CAP backend'e iletir.
+* **Trafik İzolasyonu:** Tedarikçi ve onaycı istekleri URL seviyesinde (`public` vs `approval`) ayrışır.
+
+---
+
+### 7.5. Fiori Launchpad Sandbox Shell Etkileşimi
+
+* Roadmap Faz 7 kapsamında `app/index.html` ve `app/appconfig/fioriSandboxConfig.json` kullanılarak yerel bir Fiori Launchpad sandbox kabuğu oluşturulacaktır.
+* **Kabuk Erişimi (`/index.html`):** Rota 6 altında `authenticationType: none` ile sunulur. Böylece Launchpad kabuğu açılırken gereksiz oturum engelleri oluşmaz.
+* **Tile Davranışı:**
+  * **Supplier Portal Tile:** Tıklandığında `/supplierportal/` açılır; dış tedarikçi login ve başvuru süreci serbestçe başlar.
+  * **Supplier Approvals Tile:** Tıklandığında `/supplier-approvals/` rotasına gidilir; bu rota Rota 4 ile kilitli olduğundan kullanıcı anında BTP XSUAA giriş ekranına yönlendirilir ve `Approval` rolü aranır.
+
+---
+
+### 7.6. Rota Çakışması (Route Conflict) ve Güvenlik Zafiyeti Analizi
+
+| Olası Hatalı Yapılandırma | Güvenlik / Sistem Riski | Doğru Mimari Önlem |
+| :--- | :--- | :--- |
+| Korumalı genel bir kuralın (`^/(.*)$` - `xsuaa`) en üste yazılması | Dış tedarikçiler BTP login duvarına çarpar; `/supplierportal` ve `/odata/v4/public` uçlarına erişemez, kayıt/başvuru çöker. | Genel kök kuralı daima listenin **en sonuna** (Rota 6) yazılmalıdır. |
+| Genel bir backend kuralının (`^/odata/(.*)$` - `none`) onay rotasının üstüne yazılması | Tüm onay servisleri (`/odata/v4/approval`) ağ düzeyinde korumasız kalır; Approuter XSUAA denetimini atlar. | Spesifik alt servis rotaları (`/odata/v4/public` ve `/odata/v4/approval`) bağımsız ve açık regex'lerle en üstte tanımlanmalıdır. |
+| Yetersiz regex ayrımı (örn. `^/supplier.*`) | Hem `/supplierportal` hem `/supplier-approvals` aynı kurala takılır; ya onay paneli halka açılır ya tedarikçi portalı kilitlenir. | Rotalar `/supplierportal/(.*)$` ve `/supplier-approvals/(.*)$` şeklinde dizin sınırları ile kesinleştirilmelidir. |
+| Yalnızca UI'ı koruyup Backend API'yi unutmak | Akıllı bir kullanıcı arayüzü atlayıp doğrudan `/odata/v4/approval` API'sine Postman/cURL ile istek atabilir. | Hem UI (`/supplier-approvals/**`) hem de API (`/odata/v4/approval/**`) Approuter seviyesinde `xsuaa` + `Approval` ile kilitlenmiştir. |
 
 ---
 
