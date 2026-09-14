@@ -121,7 +121,7 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
 * [x] **Adım 6.3: Başvuru Detay Diyaloğu ve PDF Inline Önizleme**
   * Detay penceresinde tüm alanların ve süreç adımlarının gösterimi.
   * Yüklenen PDF sertifikanın doğrudan tarayıcı içinde önizlenmesi.
-* [ ] **Adım 6.4: Karar İşlemleri ve AI Karar Desteği**
+* [x] **Adım 6.4: Karar İşlemleri ve AI Karar Desteği**
   * Elle Onaylama: Başvuruyu `Approved` yapma.
   * AI ile Analiz Et Butonu: Loading göstergesi, BTP `gemini` backend action çağrısı, AI karar destek raporunun görüntülenmesi, red önerisinde gerekçe ve "Sertifika" alanının otomatik doldurulması.
   * Elle Reddetme: Zorunlu karar notu ve düzenlenebilir alan seçimi doğrulaması.
