@@ -3,6 +3,9 @@
   xmlns:mvc="sap.ui.core.mvc"
   xmlns="sap.m"
   xmlns:f="sap.f"
+  xmlns:form="sap.ui.layout.form"
+  xmlns:core="sap.ui.core"
+  xmlns:u="sap.ui.unified"
   height="100%">
   <Page
     id="applicationPage"
@@ -10,45 +13,298 @@
     showNavButton="false"
     backgroundDesign="Solid">
     <headerContent>
-      <Button
-        id="btnLogout"
-        text="{i18n>btnLogout}"
-        icon="sap-icon://log-out"
-        type="Transparent"
-        press=".onLogout" />
+      <HBox alignItems="Center">
+        <Avatar
+          icon="sap-icon://supplier"
+          displayShape="Circle"
+          displaySize="XS"
+          class="sapUiTinyMarginEnd" />
+        <Text
+          text="{appView>/supplierEmail}"
+          class="sapUiSmallMarginEnd" />
+        <Button
+          id="btnLogout"
+          text="{i18n>btnLogout}"
+          icon="sap-icon://log-out"
+          type="Transparent"
+          press=".onLogout" />
+      </HBox>
     </headerContent>
     <content>
       <VBox class="sapUiResponsiveMargin">
+
+        <!-- Bilgilendirme Çubuğu -->
         <MessageStrip
-          text="{i18n>appPlaceholderNotice}"
+          id="formNoticeBar"
+          text="{i18n>formNoticeBar}"
           type="Information"
+          showIcon="true"
+          visible="{= !${appView>/hasExistingSubmission} }"
+          class="sapUiSmallMarginBottom" />
+
+        <!-- Hata Bildirimi -->
+        <MessageStrip
+          id="msgError"
+          visible="{appView>/hasError}"
+          text="{appView>/errorMessage}"
+          type="Error"
+          showIcon="true"
+          showCloseButton="true"
+          close=".onErrorStripClose"
+          class="sapUiSmallMarginBottom" />
+
+        <!-- Başarı Bildirimi -->
+        <MessageStrip
+          id="msgSuccess"
+          visible="{appView>/hasSuccess}"
+          text="{appView>/successMessage}"
+          type="Success"
           showIcon="true"
           class="sapUiSmallMarginBottom" />
 
-        <f:Card width="100%">
+        <!-- DURUM 1: Mevcut Başvurusu Bulunan Tedarikçi Bilgilendirme Kartı -->
+        <f:Card
+          id="existingSubmissionCard"
+          width="100%"
+          visible="{appView>/hasExistingSubmission}">
+          <f:header>
+            <f:cards.Header
+              title="{i18n>existingSubmissionTitle}"
+              subtitle="{i18n>appPlaceholderDesc}"
+              iconSrc="sap-icon://pending" />
+          </f:header>
           <f:content>
             <VBox class="sapUiMediumMargin">
+              <MessageStrip
+                text="{i18n>existingSubmissionNotice}"
+                type="Information"
+                showIcon="true"
+                class="sapUiSmallMarginBottom" />
+
               <HBox alignItems="Center" class="sapUiSmallMarginBottom">
-                <Avatar
-                  icon="sap-icon://supplier"
-                  displayShape="Circle"
-                  displaySize="L"
-                  class="sapUiMediumMarginEnd" />
-                <VBox>
-                  <Title
-                    text="{appView>/supplierEmail}"
-                    level="H2"
-                    titleStyle="H3" />
-                  <Text text="{i18n>appPlaceholderDesc}" />
-                </VBox>
+                <Text text="{i18n>existingStatusLabel}" class="sapUiTinyMarginEnd" />
+                <ObjectStatus
+                  id="existingStatusBadge"
+                  text="{appView>/existingSubmission/statusText}"
+                  state="{appView>/existingSubmission/statusState}"
+                  icon="{appView>/existingSubmission/statusIcon}" />
               </HBox>
-              <ObjectStatus
-                text="{i18n>systemStatusReady}"
-                state="Success"
-                icon="sap-icon://sys-enter-2" />
+
+              <HBox alignItems="Center" class="sapUiSmallMarginBottom">
+                <Text text="{i18n>companyNameLabel}: " class="sapUiTinyMarginEnd" />
+                <Text text="{appView>/existingSubmission/companyName}" />
+              </HBox>
+
+              <HBox alignItems="Center" class="sapUiSmallMarginBottom">
+                <Text text="{i18n>contactPersonLabel}: " class="sapUiTinyMarginEnd" />
+                <Text text="{appView>/existingSubmission/contactPerson}" />
+              </HBox>
+
+              <HBox alignItems="Center" class="sapUiSmallMarginBottom">
+                <Text text="{i18n>categoryLabel}: " class="sapUiTinyMarginEnd" />
+                <Text text="{appView>/existingSubmission/category}" />
+              </HBox>
+
+              <HBox alignItems="Center" class="sapUiSmallMarginBottom">
+                <Text text="{i18n>existingSubmissionDate} " class="sapUiTinyMarginEnd" />
+                <Text text="{appView>/existingSubmission/submissionDate}" />
+              </HBox>
+
+              <Button
+                text="{i18n>btnGoToStatus}"
+                icon="sap-icon://refresh"
+                type="Emphasized"
+                press=".onRefreshStatus"
+                class="sapUiSmallMarginTop" />
             </VBox>
           </f:content>
         </f:Card>
+
+        <!-- DURUM 2: İlk Başvuru Formu (Gruplandırılmış SimpleForm) -->
+        <f:Card
+          id="newApplicationCard"
+          width="100%"
+          visible="{= !${appView>/hasExistingSubmission} }">
+          <f:content>
+            <VBox class="sapUiMediumMargin">
+              <form:SimpleForm
+                id="applicationForm"
+                editable="true"
+                layout="ResponsiveGridLayout"
+                title="{i18n>formTitle}"
+                labelSpanXL="4"
+                labelSpanL="4"
+                labelSpanM="4"
+                labelSpanS="12"
+                adjustLabelSpan="false"
+                emptySpanXL="0"
+                emptySpanL="0"
+                emptySpanM="0"
+                emptySpanS="0"
+                columnsXL="2"
+                columnsL="2"
+                columnsM="2"
+                singleContainerFullSize="false">
+                <form:content>
+                  <!-- 1. GRUP: Kurumsal Şirket Bilgileri -->
+                  <core:Title text="{i18n>groupCompanyInfo}" />
+
+                  <Label
+                    text="{i18n>companyNameLabel}"
+                    required="true"
+                    labelFor="inpCompanyName" />
+                  <Input
+                    id="inpCompanyName"
+                    value="{appView>/formData/companyName}"
+                    placeholder="{i18n>companyNamePlaceholder}"
+                    valueLiveUpdate="true"
+                    liveChange=".onInputChange" />
+
+                  <Label
+                    text="{i18n>contactPersonLabel}"
+                    required="true"
+                    labelFor="inpContactPerson" />
+                  <Input
+                    id="inpContactPerson"
+                    value="{appView>/formData/contactPerson}"
+                    placeholder="{i18n>contactPersonPlaceholder}"
+                    valueLiveUpdate="true"
+                    liveChange=".onInputChange" />
+
+                  <Label
+                    text="{i18n>emailLabel}"
+                    labelFor="inpEmail" />
+                  <Input
+                    id="inpEmail"
+                    value="{appView>/supplierEmail}"
+                    editable="false" />
+
+                  <Label
+                    text="{i18n>phoneLabel}"
+                    labelFor="inpPhone" />
+                  <Input
+                    id="inpPhone"
+                    value="{appView>/formData/phone}"
+                    type="Tel"
+                    placeholder="{i18n>phonePlaceholder}" />
+
+                  <Label
+                    text="{i18n>countryLabel}"
+                    labelFor="inpCountry" />
+                  <Input
+                    id="inpCountry"
+                    value="{appView>/formData/country}"
+                    placeholder="{i18n>countryPlaceholder}" />
+
+                  <Label
+                    text="{i18n>categoryLabel}"
+                    labelFor="selCategory" />
+                  <Select
+                    id="selCategory"
+                    selectedKey="{appView>/formData/category}"
+                    width="100%">
+                    <core:Item key="" text="{i18n>selectCategoryPrompt}" />
+                    <core:Item key="Hardware" text="{i18n>categoryHardware}" />
+                    <core:Item key="Software" text="{i18n>categorySoftware}" />
+                    <core:Item key="Services" text="{i18n>categoryServices}" />
+                    <core:Item key="Consulting" text="{i18n>categoryConsulting}" />
+                  </Select>
+
+                  <Label
+                    text="{i18n>taxIdLabel}"
+                    labelFor="inpTaxId" />
+                  <Input
+                    id="inpTaxId"
+                    value="{appView>/formData/taxId}"
+                    placeholder="{i18n>taxIdPlaceholder}" />
+
+                  <Label
+                    text="{i18n>websiteLabel}"
+                    labelFor="inpWebsite" />
+                  <Input
+                    id="inpWebsite"
+                    value="{appView>/formData/website}"
+                    type="Url"
+                    placeholder="{i18n>websitePlaceholder}" />
+
+                  <Label
+                    text="{i18n>addressLabel}"
+                    labelFor="inpAddress" />
+                  <TextArea
+                    id="inpAddress"
+                    value="{appView>/formData/address}"
+                    placeholder="{i18n>addressPlaceholder}"
+                    rows="2"
+                    width="100%" />
+
+                  <Label
+                    text="{i18n>notesLabel}"
+                    labelFor="inpNotes" />
+                  <TextArea
+                    id="inpNotes"
+                    value="{appView>/formData/notes}"
+                    placeholder="{i18n>notesPlaceholder}"
+                    rows="2"
+                    width="100%" />
+
+                  <!-- 2. GRUP: Kalite / Yetki Sertifikası (PDF) -->
+                  <core:Title text="{i18n>groupCertificateInfo}" />
+
+                  <Label
+                    text="{i18n>certificateLabel}"
+                    required="true"
+                    labelFor="fileUploader" />
+                  <VBox width="100%">
+                    <MessageStrip
+                      text="{i18n>certificateHint}"
+                      type="Information"
+                      showIcon="true"
+                      class="sapUiTinyMarginBottom" />
+
+                    <u:FileUploader
+                      id="fileUploader"
+                      name="certificateFile"
+                      fileType="pdf"
+                      mimeType="application/pdf"
+                      buttonText="{i18n>fileUploadButtonText}"
+                      placeholder="{i18n>fileUploadPrompt}"
+                      width="100%"
+                      sameFilenameAllowed="true"
+                      change=".onFileChange"
+                      class="sapUiTinyMarginBottom" />
+
+                    <!-- Dosya Durumu Göstergesi -->
+                    <HBox
+                      alignItems="Center"
+                      visible="{appView>/certificate/hasFile}"
+                      class="sapUiTinyMarginTop">
+                      <ObjectStatus
+                        id="fileStatusBadge"
+                        text="{appView>/certificate/fileName}"
+                        state="{appView>/certificate/statusState}"
+                        icon="{appView>/certificate/statusIcon}"
+                        class="sapUiSmallMarginEnd" />
+                      <Text text="{i18n>fileSizeText} {appView>/certificate/fileSizeFormatted}" />
+                    </HBox>
+                  </VBox>
+                </form:content>
+              </form:SimpleForm>
+
+              <!-- Gönderim Butonu ve İşlem Çubuğu -->
+              <Toolbar class="sapUiSmallMarginTop">
+                <ToolbarSpacer />
+                <Button
+                  id="btnSubmitSubmission"
+                  text="{i18n>submitButton}"
+                  type="Emphasized"
+                  icon="sap-icon://paper-plane"
+                  press=".onSubmit"
+                  busy="{appView>/isBusy}" />
+              </Toolbar>
+            </VBox>
+          </f:content>
+        </f:Card>
+
       </VBox>
     </content>
   </Page>

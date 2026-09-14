@@ -93,7 +93,7 @@ Bu doküman, **CodeUp Supplier Management (Tedarikçi Onboarding & Onay)** proje
   * Bölünmüş ekran (split-screen: form kartı + kurumsal illüstrasyon).
   * Şifre göster/gizle göz simgesi, anlık yeşile dönen 5 kural göstergesi.
   * Gerçek `register` ve `login` çağrıları; başarılı girişte tedarikçi oturumunun başlatılarak doğrudan başvuru ekranına geçilmesi.
-* [ ] **Adım 5.3: Başvuru Formu ve Sertifika Yükleme (Application View)**
+* [x] **Adım 5.3: Başvuru Formu ve Sertifika Yükleme (Application View)**
   * Gruplandırılmış `SimpleForm`, belirgin zorunlu alan işaretleri.
   * `FileUploader`: Ön bilgilendirme (*"Yalnızca PDF ve en fazla 10 MB"*), dosya seçildiği an anlık format/boyut kontrolü, backend streaming ile gerçek PDF yükleme.
 * [ ] **Adım 5.4: Kalıcı Süreç Akışı (ProcessFlow)**
