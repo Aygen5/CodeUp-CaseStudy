@@ -15,6 +15,8 @@ sap.ui.define([
         isRegister: false,
         email: "",
         password: "",
+        passwordType: "Password",
+        passwordIcon: "sap-icon://show",
         rememberMe: true,
         isBusy: false,
         hasError: false,
@@ -104,9 +106,19 @@ sap.ui.define([
       var bCurrent = oModel.getProperty("/isRegister");
       oModel.setProperty("/isRegister", !bCurrent);
       oModel.setProperty("/password", "");
+      oModel.setProperty("/passwordType", "Password");
+      oModel.setProperty("/passwordIcon", "sap-icon://show");
       oModel.setProperty("/hasError", false);
       oModel.setProperty("/hasSuccess", false);
       oModel.setProperty("/rules", this._getDefaultRules());
+    },
+
+    onTogglePasswordVisibility: function () {
+      var oModel = this.getView().getModel("authView");
+      var sCurrentType = oModel.getProperty("/passwordType") || "Password";
+      var bIsPassword = sCurrentType === "Password";
+      oModel.setProperty("/passwordType", bIsPassword ? "Text" : "Password");
+      oModel.setProperty("/passwordIcon", bIsPassword ? "sap-icon://hide" : "sap-icon://show");
     },
 
     onErrorStripClose: function () {

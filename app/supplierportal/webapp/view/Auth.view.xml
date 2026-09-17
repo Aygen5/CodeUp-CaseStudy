@@ -152,9 +152,12 @@
                 <Input
                   id="passwordInput"
                   value="{authView>/password}"
-                  type="Password"
+                  type="{authView>/passwordType}"
                   placeholder="{i18n>authPasswordPlaceholder}"
                   showPasswordButton="true"
+                  showValueHelp="true"
+                  valueHelpIconSrc="{authView>/passwordIcon}"
+                  valueHelpRequest=".onTogglePasswordVisibility"
                   valueLiveUpdate="true"
                   liveChange=".onPasswordLiveChange"
                   class="sapUiSmallMarginBottom" />
