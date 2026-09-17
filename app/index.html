@@ -1,10 +1,92 @@
 <!DOCTYPE html>
-<html>
+<html class="sapUShellFullHeight">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CodeUp Supplier Management — Fiori Launchpad</title>
     
+    <!-- Fiori Launchpad Sandbox Configuration -->
+    <script>
+        window["sap-ushell-config"] = {
+            defaultRenderer: "fiori2",
+            renderers: {
+                fiori2: {
+                    componentData: {
+                        config: {
+                            rootIntent: "Shell-home",
+                            search: "hidden"
+                        }
+                    }
+                }
+            },
+            applications: {
+                "SupplierPortal-display": {
+                    title: "Supplier Portal",
+                    description: "Supplier Onboarding & Application",
+                    additionalInformation: "SAPUI5.Component=codeup.supplier.portal",
+                    applicationType: "URL",
+                    url: "/supplierportal",
+                    navigationMode: "embedded"
+                },
+                "SupplierApprovals-manage": {
+                    title: "Supplier Approvals",
+                    description: "Application Review & AI Analysis",
+                    additionalInformation: "SAPUI5.Component=codeup.supplier.approvals",
+                    applicationType: "URL",
+                    url: "/supplier-approvals",
+                    navigationMode: "embedded"
+                }
+            },
+            services: {
+                LaunchPageAdapter: {
+                    config: {
+                        groups: [
+                            {
+                                id: "codeup_supplier_management",
+                                title: "CodeUp Supplier Management",
+                                isPreset: true,
+                                isVisible: true,
+                                isGroupLocked: false,
+                                tiles: [
+                                    {
+                                        id: "tile_supplier_portal",
+                                        title: "Supplier Portal",
+                                        size: "1x1",
+                                        tileType: "sap.ushell.ui.tile.StaticTile",
+                                        properties: {
+                                            title: "Supplier Portal",
+                                            subtitle: "Supplier Onboarding & Application",
+                                            info: "Self-Service",
+                                            icon: "sap-icon://supplier",
+                                            targetURL: "#SupplierPortal-display"
+                                        }
+                                    },
+                                    {
+                                        id: "tile_supplier_approvals",
+                                        title: "Supplier Approvals",
+                                        size: "1x1",
+                                        tileType: "sap.ushell.ui.tile.StaticTile",
+                                        properties: {
+                                            title: "Supplier Approvals",
+                                            subtitle: "Application Review & AI Analysis",
+                                            info: "Approval Cockpit",
+                                            icon: "sap-icon://approvals",
+                                            targetURL: "#SupplierApprovals-manage"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                NavTargetResolution: {
+                    config: {
+                        enableClientSideTargetResolution: true
+                    }
+                }
+            }
+        };
+    </script>
     <script id="sap-ushell-bootstrap" src="https://ui5.sap.com/test-resources/sap/ushell/bootstrap/sandbox.js"></script>
     <script
         id="sap-ui-bootstrap"
@@ -39,12 +121,14 @@
                 })
                 .catch(function () {});
 
-            sap.ushell.Container.createRenderer("fiori2").then(function (oRenderer) {
-                oRenderer.placeAt("content");
+            // Create renderer asynchronously with bAsync: true
+            sap.ushell.Container.createRenderer(true).then(function (oRenderer) {
+                oRenderer.placeAt("canvas");
             });
         });
     </script>
 </head>
-<body class="sapUiBody" id="content">
+<body class="sapUiBody sapUShellFullHeight">
+    <div id="canvas" class="sapUShellFullHeight"></div>
 </body>
 </html>

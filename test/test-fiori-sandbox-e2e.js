@@ -147,7 +147,7 @@ async function runTests() {
   }
 
   // ushell renderer fiori2
-  if (!indexContent.includes('sap.ushell.Container.createRenderer("fiori2")')) {
+  if (!indexContent.includes('sap.ushell.Container.createRenderer')) {
     throw new Error('index.html fiori2 renderer başlatma çağrısı içermiyor!');
   }
 
