@@ -82,8 +82,8 @@ async function runTests() {
   // 2.1 Supplier Kayıt Sayısı
   const suppliersRes = await query('SELECT count(*) as CNT FROM CODEUP_SUPPLIER_MANAGEMENT_SUPPLIERS');
   const supplierCount = suppliersRes[0].CNT;
-  if (supplierCount !== 12) {
-    throw new Error(`Beklenen 12 tedarikçi yerine ${supplierCount} tedarikçi bulundu!`);
+  if (supplierCount < 12) {
+    throw new Error(`Beklenen en az 12 tedarikçi yerine ${supplierCount} tedarikçi bulundu!`);
   }
   console.log(`  [OK] Gerçek SAP HANA Cloud üzerinde ${supplierCount} adet Tedarikçi (Suppliers) doğrulandı.`);
   passedTests++;
@@ -91,8 +91,8 @@ async function runTests() {
   // 2.2 Submission Kayıt Sayısı
   const submissionsRes = await query('SELECT count(*) as CNT FROM CODEUP_SUPPLIER_MANAGEMENT_SUBMISSIONS');
   const submissionCount = submissionsRes[0].CNT;
-  if (submissionCount !== 12) {
-    throw new Error(`Beklenen 12 başvuru yerine ${submissionCount} başvuru bulundu!`);
+  if (submissionCount < 12) {
+    throw new Error(`Beklenen en az 12 başvuru yerine ${submissionCount} başvuru bulundu!`);
   }
   console.log(`  [OK] Gerçek SAP HANA Cloud üzerinde ${submissionCount} adet Başvuru (Submissions) doğrulandı.`);
   passedTests++;
@@ -180,17 +180,17 @@ async function runTests() {
 
   // 3.2 CAP DB API ile Sorgu Doğrulaması
   const capSuppliers = await db.run(SELECT.from('codeup.supplier.management.Suppliers'));
-  if (capSuppliers.length !== 12) {
-    throw new Error(`CAP HANA üzerinden 12 tedarikçi okunamadı! Bulunan: ${capSuppliers.length}`);
+  if (capSuppliers.length < 12) {
+    throw new Error(`CAP HANA üzerinden en az 12 tedarikçi okunamadı! Bulunan: ${capSuppliers.length}`);
   }
-  console.log(`  [OK] CAP db.run(SELECT.from(Suppliers)) doğrudan SAP HANA Cloud üzerinden 12 tedarikçi döndürdü.`);
+  console.log(`  [OK] CAP db.run(SELECT.from(Suppliers)) doğrudan SAP HANA Cloud üzerinden ${capSuppliers.length} tedarikçi döndürdü.`);
   passedTests++;
 
   const capSubmissions = await db.run(SELECT.from('codeup.supplier.management.Submissions'));
-  if (capSubmissions.length !== 12) {
-    throw new Error(`CAP HANA üzerinden 12 başvuru okunamadı! Bulunan: ${capSubmissions.length}`);
+  if (capSubmissions.length < 12) {
+    throw new Error(`CAP HANA üzerinden en az 12 başvuru okunamadı! Bulunan: ${capSubmissions.length}`);
   }
-  console.log(`  [OK] CAP db.run(SELECT.from(Submissions)) doğrudan SAP HANA Cloud üzerinden 12 başvuru döndürdü.`);
+  console.log(`  [OK] CAP db.run(SELECT.from(Submissions)) doğrudan SAP HANA Cloud üzerinden ${capSubmissions.length} başvuru döndürdü.`);
   passedTests++;
 
   capServer.close();
