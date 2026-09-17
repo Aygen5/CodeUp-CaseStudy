@@ -17,7 +17,7 @@ sap.ui.define([
         password: "",
         passwordType: "Password",
         passwordIcon: "sap-icon://show",
-        rememberMe: true,
+        rememberMe: false,
         isBusy: false,
         hasError: false,
         errorMessage: "",
@@ -27,7 +27,6 @@ sap.ui.define([
       });
       this.getView().setModel(oViewModel, "authView");
 
-      // Oturum zaten varsa doğrudan başvuru ekranına yönlendir
       var oRouter = this.getOwnerComponent().getRouter();
       if (oRouter) {
         var oRoute = oRouter.getRoute("auth");
@@ -46,15 +45,36 @@ sap.ui.define([
     },
 
     _onPatternMatched: function () {
+      // Her girişte temiz bir login ekranı sunulması için önceki oturumu ve formu sıfırla
+      AuthManager.clearSession();
+
       var oModel = this.getView().getModel("authView");
-      if (AuthManager.isAuthenticated()) {
-        this._navToApplication();
-      } else if (oModel) {
+      if (oModel) {
+        oModel.setProperty("/email", "");
+        oModel.setProperty("/password", "");
+        oModel.setProperty("/passwordType", "Password");
+        oModel.setProperty("/passwordIcon", "sap-icon://show");
         oModel.setProperty("/hasSuccess", false);
         oModel.setProperty("/successMessage", "");
         oModel.setProperty("/hasError", false);
         oModel.setProperty("/errorMessage", "");
         oModel.setProperty("/isBusy", false);
+        oModel.setProperty("/isRegister", false);
+        oModel.setProperty("/rules", this._getDefaultRules());
+      }
+
+      // sap.m.App kontrolü içinde Auth sayfasının aktif olmasını garanti et
+      var oComponent = this.getOwnerComponent();
+      var oRoot = oComponent ? oComponent.getRootControl() : null;
+      var oApp = oRoot ? (oRoot.byId ? oRoot.byId("appControl") : null) : null;
+      if (oApp && typeof oApp.to === "function") {
+        var aPages = oApp.getPages ? oApp.getPages() : [];
+        var oAuthPage = aPages.find(function (p) {
+          return p.getId && p.getId().indexOf("auth") !== -1;
+        });
+        if (oAuthPage && oApp.getCurrentPage && oApp.getCurrentPage() !== oAuthPage) {
+          oApp.to(oAuthPage);
+        }
       }
     },
 
