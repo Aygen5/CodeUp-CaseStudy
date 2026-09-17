@@ -19,6 +19,24 @@
                     }
                 }
             },
+            applications: {
+                "SupplierPortal-display": {
+                    title: "Supplier Portal",
+                    description: "External self-service",
+                    additionalInformation: "SAPUI5.Component=codeup.supplier.portal",
+                    applicationType: "URL",
+                    url: "/supplierportal",
+                    navigationMode: "embedded"
+                },
+                "SupplierApprovals-manage": {
+                    title: "Supplier Approvals",
+                    description: "Review & Decide",
+                    additionalInformation: "SAPUI5.Component=codeup.supplier.approvals",
+                    applicationType: "URL",
+                    url: "/supplier-approvals",
+                    navigationMode: "embedded"
+                }
+            },
             services: {
                 LaunchPage: {
                     adapter: {
@@ -175,6 +193,45 @@
             }
         };
     </script>
+    <!-- Intercept sandbox default demo apps configuration request to suppress 'Sample Applications' -->
+    <script>
+        (function () {
+            var origOpen = window.XMLHttpRequest.prototype.open;
+            var origSend = window.XMLHttpRequest.prototype.send;
+            window.XMLHttpRequest.prototype.open = function (method, url) {
+                this._interceptUrl = url;
+                return origOpen.apply(this, arguments);
+            };
+            window.XMLHttpRequest.prototype.send = function () {
+                if (this._interceptUrl && typeof this._interceptUrl === "string" && this._interceptUrl.indexOf("shells/sandbox/fioriSandboxConfig.json") !== -1) {
+                    var emptyMock = JSON.stringify({
+                        services: {
+                            ClientSideTargetResolution: {
+                                adapter: {
+                                    config: {
+                                        inbounds: {}
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    Object.defineProperty(this, "status", { get: function () { return 200; }, configurable: true });
+                    Object.defineProperty(this, "statusText", { get: function () { return "OK"; }, configurable: true });
+                    Object.defineProperty(this, "readyState", { get: function () { return 4; }, configurable: true });
+                    Object.defineProperty(this, "responseText", { get: function () { return emptyMock; }, configurable: true });
+                    Object.defineProperty(this, "response", { get: function () { return emptyMock; }, configurable: true });
+                    if (typeof this.onreadystatechange === "function") {
+                        this.onreadystatechange();
+                    }
+                    if (typeof this.onload === "function") {
+                        this.onload();
+                    }
+                    return;
+                }
+                return origSend.apply(this, arguments);
+            };
+        })();
+    </script>
     <script id="sap-ushell-bootstrap" src="https://ui5.sap.com/test-resources/sap/ushell/bootstrap/sandbox.js"></script>
     <script
         id="sap-ui-bootstrap"
@@ -210,17 +267,10 @@
                 }
             }
 
-            // Ensure only our "codeup_supplier_management" group ("Ana sayfam") is present
-            try {
-                if (window["sap-ushell-config"] && window["sap-ushell-config"].services && window["sap-ushell-config"].services.LaunchPage) {
-                    var lpAdapter = window["sap-ushell-config"].services.LaunchPage.adapter;
-                    if (lpAdapter && lpAdapter.config && Array.isArray(lpAdapter.config.groups)) {
-                        lpAdapter.config.groups = lpAdapter.config.groups.filter(function (g) {
-                            return g.id === "codeup_supplier_management";
-                        });
-                    }
-                }
-            } catch (e) {}
+            // Register custom logout hook to redirect to Approuter's /logout route
+            sap.ushell.Container.registerLogout(function () {
+                window.location.href = '/logout';
+            });
 
             fetch('/user-api/currentUser')
                 .then(function (res) { return res.ok ? res.json() : null; })

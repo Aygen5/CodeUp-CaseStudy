@@ -20,7 +20,9 @@
     "@sap/cds-dk": "^10.1.0"
   },
   "scripts": {
-    "start": "cds-serve",
+    "start": "node run-hybrid.js",
+    "hybrid": "node run-hybrid.js",
+    "backend": "cds run --profile hybrid",
     "watch": "cds watch",
     "approuter": "node approuter.js",
     "deploy:hana": "cds deploy --to hana"
