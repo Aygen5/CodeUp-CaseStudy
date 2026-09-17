@@ -6,6 +6,7 @@
   xmlns:form="sap.ui.layout.form"
   xmlns:core="sap.ui.core"
   xmlns:u="sap.ui.unified"
+  xmlns:unified="sap.ui.unified"
   xmlns:commons="sap.suite.ui.commons"
   height="100%">
   <Page
@@ -340,7 +341,7 @@
                       text="{= ${appView>/editableFields/certificate} ? ${i18n>reApplyCertificateOptional} : ${i18n>reApplyCertificateLocked} }"
                       class="sapUiTinyMarginBottom" />
 
-                    <unified:FileUploader
+                    <u:FileUploader
                       id="reApplyFileUploader"
                       name="reApplyCertificateUpload"
                       fileType="pdf"
