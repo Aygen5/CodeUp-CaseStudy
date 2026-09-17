@@ -30,13 +30,31 @@ sap.ui.define([
       // Oturum zaten varsa doğrudan başvuru ekranına yönlendir
       var oRouter = this.getOwnerComponent().getRouter();
       if (oRouter) {
-        oRouter.getRoute("auth").attachPatternMatched(this._onPatternMatched, this);
+        var oRoute = oRouter.getRoute("auth");
+        if (oRoute) {
+          oRoute.attachPatternMatched(this._onPatternMatched, this);
+        }
+        var oTarget = oRouter.getTarget("auth");
+        if (oTarget) {
+          oTarget.attachDisplay(this._onPatternMatched, this);
+        }
       }
+
+      this.getView().addEventDelegate({
+        onBeforeShow: this._onPatternMatched.bind(this)
+      }, this);
     },
 
     _onPatternMatched: function () {
+      var oModel = this.getView().getModel("authView");
       if (AuthManager.isAuthenticated()) {
         this._navToApplication();
+      } else if (oModel) {
+        oModel.setProperty("/hasSuccess", false);
+        oModel.setProperty("/successMessage", "");
+        oModel.setProperty("/hasError", false);
+        oModel.setProperty("/errorMessage", "");
+        oModel.setProperty("/isBusy", false);
       }
     },
 
@@ -276,10 +294,41 @@ sap.ui.define([
     },
 
     _navToApplication: function () {
-      var oRouter = this.getOwnerComponent().getRouter();
-      if (oRouter) {
-        oRouter.navTo("application", {}, true);
+      var oComponent = this.getOwnerComponent();
+      var oRouter = oComponent ? oComponent.getRouter() : null;
+
+      // 1. Hedef görünümü (Target) doğrudan görüntüle (FLP Sandbox ile %100 uyumlu)
+      if (oRouter && oRouter.getTargets()) {
+        try {
+          oRouter.getTargets().display("application");
+        } catch (e) {
+          // Targets display hatası
+        }
       }
+
+      // 2. Standart Router navTo çağrısı (Standalone ve hash geçmişi desteği için)
+      if (oRouter) {
+        try {
+          oRouter.navTo("application", {}, {}, true);
+        } catch (e) {
+          // FLP Shell hash changer uyarısını yut
+        }
+      }
+
+      // 3. Fallback: sap.m.App (NavContainer) üzerinden doğrudan geçiş yap
+      try {
+        var oRoot = oComponent ? oComponent.getRootControl() : null;
+        var oApp = oRoot ? (oRoot.byId ? oRoot.byId("appControl") : null) : null;
+        if (oApp && typeof oApp.to === "function") {
+          var aPages = oApp.getPages ? oApp.getPages() : [];
+          var oAppPage = aPages.find(function (p) {
+            return p.getId && p.getId().indexOf("application") !== -1;
+          });
+          if (oAppPage) {
+            oApp.to(oAppPage);
+          }
+        }
+      } catch (e) {}
     }
   });
 });

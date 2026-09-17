@@ -88,8 +88,19 @@ sap.ui.define([
 
       var oRouter = this.getOwnerComponent().getRouter();
       if (oRouter) {
-        oRouter.getRoute("application").attachPatternMatched(this._onPatternMatched, this);
+        var oRoute = oRouter.getRoute("application");
+        if (oRoute) {
+          oRoute.attachPatternMatched(this._onPatternMatched, this);
+        }
+        var oTarget = oRouter.getTarget("application");
+        if (oTarget) {
+          oTarget.attachDisplay(this._onPatternMatched, this);
+        }
       }
+
+      this.getView().addEventDelegate({
+        onBeforeShow: this._onPatternMatched.bind(this)
+      }, this);
     },
 
     _onPatternMatched: function () {
@@ -833,10 +844,39 @@ sap.ui.define([
     },
 
     _navToAuth: function () {
-      var oRouter = this.getOwnerComponent().getRouter();
-      if (oRouter) {
-        oRouter.navTo("auth", {}, true);
+      var oComponent = this.getOwnerComponent();
+      var oRouter = oComponent ? oComponent.getRouter() : null;
+
+      // 1. Hedef görünümü (Target) doğrudan görüntüle (FLP Sandbox ile %100 uyumlu)
+      if (oRouter && oRouter.getTargets()) {
+        try {
+          oRouter.getTargets().display("auth");
+        } catch (e) {
+          // Targets display hatası
+        }
       }
+
+      // 2. Standart Router navTo çağrısı (Standalone ve hash geçmişi desteği için)
+      if (oRouter) {
+        try {
+          oRouter.navTo("auth", {}, {}, true);
+        } catch (e) {}
+      }
+
+      // 3. Fallback: sap.m.App (NavContainer) üzerinden doğrudan geçiş yap
+      try {
+        var oRoot = oComponent ? oComponent.getRootControl() : null;
+        var oApp = oRoot ? (oRoot.byId ? oRoot.byId("appControl") : null) : null;
+        if (oApp && typeof oApp.to === "function") {
+          var aPages = oApp.getPages ? oApp.getPages() : [];
+          var oAuthPage = aPages.find(function (p) {
+            return p.getId && p.getId().indexOf("auth") !== -1;
+          });
+          if (oAuthPage) {
+            oApp.to(oAuthPage);
+          }
+        }
+      } catch (e) {}
     }
   });
 });
