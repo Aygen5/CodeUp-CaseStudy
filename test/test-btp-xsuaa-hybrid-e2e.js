@@ -220,16 +220,20 @@ async function runTests() {
   console.log('  [OK] /user-api/currentUser servisi Fiori Launchpad shell entegrasyonu için hazır.');
   passedTests++;
 
-  // 4.5 Launchpad Sandbox Kabuğu (/index.html)
-  const lpRes = await fetch(`${approuterUrl}/index.html`);
-  if (lpRes.status !== 200) {
-    throw new Error(`Launchpad /index.html açılamadı! Status: ${lpRes.status}`);
-  }
+  // 4.5 Launchpad Sandbox Kabuğu (/index.html XSUAA Login Yönlendirmesi)
+  const lpRes = await fetch(`${approuterUrl}/index.html`, { redirect: 'manual' });
+  const lpLocation = lpRes.headers.get('location') || '';
   const lpText = await lpRes.text();
-  if (!lpText.includes('/user-api/currentUser') || !lpText.includes('UserInfo')) {
+  const isBtpChallenge = lpText.includes(btpHost) || lpLocation.includes(btpHost) || lpText.includes('oauth/authorize') || lpLocation.includes('oauth/authorize');
+  if (!isBtpChallenge) {
+    throw new Error('Launchpad /index.html beklenen XSUAA login yönlendirmesini tetiklemedi!');
+  }
+  // Statik dosyanın UserInfo entegrasyonu denetimi
+  const indexHtmlContent = fs.readFileSync(path.join(rootDir, 'app', 'index.html'), 'utf8');
+  if (!indexHtmlContent.includes('/user-api/currentUser') || !indexHtmlContent.includes('UserInfo')) {
     throw new Error('Launchpad index.html UserInfo entegrasyon kodunu içermiyor!');
   }
-  console.log('  [OK] Fiori Launchpad Sandbox kabuğu gerçek XSUAA UserInfo entegrasyonu ile HTTP 200 döndürdü.');
+  console.log('  [OK] Fiori Launchpad Sandbox kabuğu (/index.html) gerçek XSUAA login koruması ve UserInfo entegrasyonuna sahip.');
   passedTests++;
 
   // -------------------------------------------------------------

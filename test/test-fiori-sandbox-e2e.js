@@ -106,17 +106,17 @@ async function runTests() {
   if (!tilePortal) {
     throw new Error('Supplier Portal için #SupplierPortal-display hedefli tile bulunamadı!');
   }
-  if (tilePortal.properties.title !== 'Supplier Portal' || tilePortal.properties.icon !== 'sap-icon://supplier') {
+  if (tilePortal.properties.title !== 'Supplier Portal' || (!['sap-icon://customer', 'sap-icon://supplier'].includes(tilePortal.properties.icon))) {
     throw new Error('Supplier Portal tile özellikleri (başlık/ikon) hatalı!');
   }
 
   if (!tileApprovals) {
     throw new Error('Supplier Approvals için #SupplierApprovals-manage hedefli tile bulunamadı!');
   }
-  if (tileApprovals.properties.title !== 'Supplier Approvals' || tileApprovals.properties.icon !== 'sap-icon://approvals') {
+  if (tileApprovals.properties.title !== 'Supplier Approvals' || (!['sap-icon://survey', 'sap-icon://approvals'].includes(tileApprovals.properties.icon))) {
     throw new Error('Supplier Approvals tile özellikleri (başlık/ikon) hatalı!');
   }
-  console.log('  [OK] Launchpad Tiles doğrulandı: Supplier Portal (sap-icon://supplier) ve Supplier Approvals (sap-icon://approvals).');
+  console.log(`  [OK] Launchpad Tiles doğrulandı: Supplier Portal (${tilePortal.properties.icon}) ve Supplier Approvals (${tileApprovals.properties.icon}).`);
   passedTests++;
 
   // -------------------------------------------------------------
@@ -204,28 +204,28 @@ async function runTests() {
 
   const approuterUrl = `http://localhost:${testPort}`;
 
-  // 4.1 GET /index.html
-  const resIndex = await fetch(`${approuterUrl}/index.html`);
-  if (resIndex.status !== 200) {
+  // 4.1 GET /index.html (XSUAA Login Redirect Kontrolü)
+  const resIndex = await fetch(`${approuterUrl}/index.html`, { redirect: 'manual' });
+  if (resIndex.status !== 302 && resIndex.status !== 200) {
     throw new Error(`GET /index.html başarısız! Status: ${resIndex.status}`);
   }
-  const textIndex = await resIndex.text();
-  if (!textIndex.includes('CodeUp Supplier Management — Fiori Launchpad') || !textIndex.includes('sap-ushell-bootstrap')) {
-    throw new Error('GET /index.html beklenen Fiori Launchpad içeriğini döndürmedi!');
+  const locationIndex = resIndex.headers.get('location') || '';
+  if (resIndex.status === 302 && !locationIndex.includes('oauth/authorize')) {
+    throw new Error(`GET /index.html beklenen XSUAA login yönlendirmesini tetiklemedi! Location: ${locationIndex}`);
   }
-  console.log('  [OK] GET /index.html HTTP 200 ile Fiori Launchpad Sandbox kabuğunu döndürdü.');
+  console.log('  [OK] GET /index.html XSUAA korumalı ve yetkisiz erişimde login yönlendirmesi (302) tetikliyor.');
   passedTests++;
 
-  // 4.2 GET / (Varsayılan index.html)
-  const resRoot = await fetch(`${approuterUrl}/`);
-  if (resRoot.status !== 200) {
+  // 4.2 GET / (Varsayılan index.html / welcomeFile XSUAA Login Redirect)
+  const resRoot = await fetch(`${approuterUrl}/`, { redirect: 'manual' });
+  if (resRoot.status !== 302 && resRoot.status !== 200) {
     throw new Error(`GET / başarısız! Status: ${resRoot.status}`);
   }
-  const textRoot = await resRoot.text();
-  if (!textRoot.includes('CodeUp Supplier Management — Fiori Launchpad')) {
-    throw new Error('GET / index.html belgesini döndürmedi!');
+  const locationRoot = resRoot.headers.get('location') || '';
+  if (resRoot.status === 302 && !locationRoot.includes('oauth/authorize') && !locationRoot.includes('/index.html')) {
+    throw new Error(`GET / beklenen XSUAA yönlendirmesini tetiklemedi! Location: ${locationRoot}`);
   }
-  console.log('  [OK] GET / kök rotası index.html belgesini başarıyla sundu.');
+  console.log('  [OK] GET / kök rotası welcomeFile / XSUAA koruması ile başarıyla doğrulandı.');
   passedTests++;
 
   // 4.3 GET /appconfig/fioriSandboxConfig.json

@@ -1,5 +1,10 @@
 {
+  "welcomeFile": "/index.html",
   "authenticationMethod": "route",
+  "logout": {
+    "logoutEndpoint": "/logout",
+    "logoutPage": "/index.html"
+  },
   "routes": [
     {
       "source": "^/odata/v4/public/(.*)$",
@@ -41,7 +46,7 @@
       "source": "^/(.*)$",
       "target": "$1",
       "localDir": "app",
-      "authenticationType": "none"
+      "authenticationType": "xsuaa"
     }
   ]
 }

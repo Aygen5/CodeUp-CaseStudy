@@ -19,31 +19,54 @@
                     }
                 }
             },
-            applications: {
-                "SupplierPortal-display": {
-                    title: "Supplier Portal",
-                    description: "Supplier Onboarding & Application",
-                    additionalInformation: "SAPUI5.Component=codeup.supplier.portal",
-                    applicationType: "URL",
-                    url: "/supplierportal",
-                    navigationMode: "embedded"
-                },
-                "SupplierApprovals-manage": {
-                    title: "Supplier Approvals",
-                    description: "Application Review & AI Analysis",
-                    additionalInformation: "SAPUI5.Component=codeup.supplier.approvals",
-                    applicationType: "URL",
-                    url: "/supplier-approvals",
-                    navigationMode: "embedded"
-                }
-            },
             services: {
+                LaunchPage: {
+                    adapter: {
+                        config: {
+                            groups: [
+                                {
+                                    id: "codeup_supplier_management",
+                                    title: "Ana sayfam",
+                                    isPreset: true,
+                                    isVisible: true,
+                                    isGroupLocked: false,
+                                    tiles: [
+                                        {
+                                            id: "tile_supplier_portal",
+                                            title: "Supplier Portal",
+                                            size: "1x1",
+                                            tileType: "sap.ushell.ui.tile.StaticTile",
+                                            properties: {
+                                                title: "Supplier Portal",
+                                                subtitle: "External self-service",
+                                                icon: "sap-icon://customer",
+                                                targetURL: "#SupplierPortal-display"
+                                            }
+                                        },
+                                        {
+                                            id: "tile_supplier_approvals",
+                                            title: "Supplier Approvals",
+                                            size: "1x1",
+                                            tileType: "sap.ushell.ui.tile.StaticTile",
+                                            properties: {
+                                                title: "Supplier Approvals",
+                                                subtitle: "Review & Decide",
+                                                icon: "sap-icon://survey",
+                                                targetURL: "#SupplierApprovals-manage"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                },
                 LaunchPageAdapter: {
                     config: {
                         groups: [
                             {
                                 id: "codeup_supplier_management",
-                                title: "CodeUp Supplier Management",
+                                title: "Ana sayfam",
                                 isPreset: true,
                                 isVisible: true,
                                 isGroupLocked: false,
@@ -55,9 +78,8 @@
                                         tileType: "sap.ushell.ui.tile.StaticTile",
                                         properties: {
                                             title: "Supplier Portal",
-                                            subtitle: "Supplier Onboarding & Application",
-                                            info: "Self-Service",
-                                            icon: "sap-icon://supplier",
+                                            subtitle: "External self-service",
+                                            icon: "sap-icon://customer",
                                             targetURL: "#SupplierPortal-display"
                                         }
                                     },
@@ -68,9 +90,8 @@
                                         tileType: "sap.ushell.ui.tile.StaticTile",
                                         properties: {
                                             title: "Supplier Approvals",
-                                            subtitle: "Application Review & AI Analysis",
-                                            info: "Approval Cockpit",
-                                            icon: "sap-icon://approvals",
+                                            subtitle: "Review & Decide",
+                                            icon: "sap-icon://survey",
                                             targetURL: "#SupplierApprovals-manage"
                                         }
                                     }
@@ -79,9 +100,76 @@
                         ]
                     }
                 },
+                ClientSideTargetResolution: {
+                    adapter: {
+                        config: {
+                            inbounds: {
+                                "SupplierPortal-display": {
+                                    semanticObject: "SupplierPortal",
+                                    action: "display",
+                                    title: "Supplier Portal",
+                                    signature: {
+                                        parameters: {},
+                                        additionalParameters: "allowed"
+                                    },
+                                    resolutionResult: {
+                                        applicationType: "SAPUI5",
+                                        additionalInformation: "SAPUI5.Component=codeup.supplier.portal",
+                                        url: "/supplierportal"
+                                    }
+                                },
+                                "SupplierApprovals-manage": {
+                                    semanticObject: "SupplierApprovals",
+                                    action: "manage",
+                                    title: "Supplier Approvals",
+                                    signature: {
+                                        parameters: {},
+                                        additionalParameters: "allowed"
+                                    },
+                                    resolutionResult: {
+                                        applicationType: "SAPUI5",
+                                        additionalInformation: "SAPUI5.Component=codeup.supplier.approvals",
+                                        url: "/supplier-approvals"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 NavTargetResolution: {
+                    adapter: {
+                        config: {
+                            applications: {
+                                "SupplierPortal-display": {
+                                    title: "Supplier Portal",
+                                    description: "External self-service",
+                                    additionalInformation: "SAPUI5.Component=codeup.supplier.portal",
+                                    applicationType: "URL",
+                                    url: "/supplierportal"
+                                },
+                                "SupplierApprovals-manage": {
+                                    title: "Supplier Approvals",
+                                    description: "Review & Decide",
+                                    additionalInformation: "SAPUI5.Component=codeup.supplier.approvals",
+                                    applicationType: "URL",
+                                    url: "/supplier-approvals"
+                                }
+                            }
+                        }
+                    },
                     config: {
                         enableClientSideTargetResolution: true
+                    }
+                },
+                Container: {
+                    adapter: {
+                        config: {
+                            id: "aygenyildirim27@gmail.com",
+                            firstName: "Aygen",
+                            lastName: "Yıldırım",
+                            fullName: "Aygen Yıldırım",
+                            email: "aygenyildirim27@gmail.com"
+                        }
                     }
                 }
             }
@@ -102,29 +190,52 @@
     </script>
     <script>
         sap.ui.getCore().attachInit(function () {
-            // Fetch authenticated user info from real XSUAA if logged in
+            // Function to apply user identity to SAPUI5 Shell UserInfo
+            function applyUserToShell(user) {
+                if (user && sap.ushell && sap.ushell.Container) {
+                    sap.ushell.Container.getServiceAsync("UserInfo").then(function (userInfoService) {
+                        var oUser = userInfoService.getUser();
+                        if (oUser) {
+                            var displayName = user.displayName || 'Aygen Yıldırım';
+                            var firstName = user.firstname || displayName.split(' ')[0] || 'Aygen';
+                            var lastName = user.lastname || displayName.split(' ').slice(1).join(' ') || 'Yıldırım';
+                            var email = user.email || 'aygenyildirim27@gmail.com';
+                            oUser.setFullName(displayName);
+                            oUser.setFirstName(firstName);
+                            oUser.setLastName(lastName);
+                            oUser.setEmail(email);
+                            if (user.name) oUser.setId(user.name);
+                        }
+                    }).catch(function () {});
+                }
+            }
+
+            // Ensure only our "codeup_supplier_management" group ("Ana sayfam") is present
+            try {
+                if (window["sap-ushell-config"] && window["sap-ushell-config"].services && window["sap-ushell-config"].services.LaunchPage) {
+                    var lpAdapter = window["sap-ushell-config"].services.LaunchPage.adapter;
+                    if (lpAdapter && lpAdapter.config && Array.isArray(lpAdapter.config.groups)) {
+                        lpAdapter.config.groups = lpAdapter.config.groups.filter(function (g) {
+                            return g.id === "codeup_supplier_management";
+                        });
+                    }
+                }
+            } catch (e) {}
+
             fetch('/user-api/currentUser')
                 .then(function (res) { return res.ok ? res.json() : null; })
                 .then(function (user) {
-                    if (user && user.email && sap.ushell && sap.ushell.Container) {
-                        sap.ushell.Container.getServiceAsync("UserInfo").then(function (userInfoService) {
-                            var oUser = userInfoService.getUser();
-                            if (oUser) {
-                                if (user.displayName) oUser.setFullName(user.displayName);
-                                if (user.firstname) oUser.setFirstName(user.firstname);
-                                if (user.lastname) oUser.setLastName(user.lastname);
-                                if (user.email) oUser.setEmail(user.email);
-                                if (user.name) oUser.setId(user.name);
-                            }
-                        }).catch(function () {});
+                    if (user) {
+                        applyUserToShell(user);
                     }
                 })
-                .catch(function () {});
-
-            // Create renderer asynchronously with bAsync: true
-            sap.ushell.Container.createRenderer(true).then(function (oRenderer) {
-                oRenderer.placeAt("canvas");
-            });
+                .catch(function () {})
+                .finally(function () {
+                    // Create renderer asynchronously with bAsync: true
+                    sap.ushell.Container.createRenderer(true).then(function (oRenderer) {
+                        oRenderer.placeAt("canvas");
+                    });
+                });
         });
     </script>
 </head>
