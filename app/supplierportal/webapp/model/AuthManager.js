@@ -86,7 +86,6 @@ sap.ui.define([
         return {};
       }
       return {
-        "Authorization": "Bearer " + token,
         "X-Supplier-Token": token
       };
     }

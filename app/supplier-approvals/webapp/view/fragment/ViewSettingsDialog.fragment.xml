@@ -35,44 +35,46 @@
             <ViewSettingsCustomTab
                 id="columnsTab"
                 title="{i18n>settingsColumnsTab}">
-                <VBox class="sapUiSmallMargin">
-                    <CheckBox
-                        text="{i18n>colCompany}"
-                        selected="{viewModel>/columns/companyName}" />
-                    <CheckBox
-                        text="{i18n>colContact}"
-                        selected="{viewModel>/columns/contactPerson}" />
-                    <CheckBox
-                        text="{i18n>colEmail}"
-                        selected="{viewModel>/columns/supplierEmail}" />
-                    <CheckBox
-                        text="{i18n>colDate}"
-                        selected="{viewModel>/columns/submissionDate}" />
-                    <CheckBox
-                        text="{i18n>colStatus}"
-                        selected="{viewModel>/columns/status}" />
-                    <CheckBox
-                        text="{i18n>colPhone}"
-                        selected="{viewModel>/columns/phone}" />
-                    <CheckBox
-                        text="{i18n>colCountry}"
-                        selected="{viewModel>/columns/country}" />
-                    <CheckBox
-                        text="{i18n>colCategory}"
-                        selected="{viewModel>/columns/category}" />
-                    <CheckBox
-                        text="{i18n>colTaxId}"
-                        selected="{viewModel>/columns/taxId}" />
-                    <CheckBox
-                        text="{i18n>colWebsite}"
-                        selected="{viewModel>/columns/website}" />
-                    <CheckBox
-                        text="{i18n>colAddress}"
-                        selected="{viewModel>/columns/address}" />
-                    <CheckBox
-                        text="{i18n>colNotes}"
-                        selected="{viewModel>/columns/notes}" />
-                </VBox>
+                <content>
+                    <VBox class="sapUiSmallMargin">
+                        <CheckBox
+                            text="{i18n>colCompany}"
+                            selected="{viewSettingsModel>/companyName}" />
+                        <CheckBox
+                            text="{i18n>colContact}"
+                            selected="{viewSettingsModel>/contactPerson}" />
+                        <CheckBox
+                            text="{i18n>colEmail}"
+                            selected="{viewSettingsModel>/supplierEmail}" />
+                        <CheckBox
+                            text="{i18n>colDate}"
+                            selected="{viewSettingsModel>/submissionDate}" />
+                        <CheckBox
+                            text="{i18n>colStatus}"
+                            selected="{viewSettingsModel>/status}" />
+                        <CheckBox
+                            text="{i18n>colPhone}"
+                            selected="{viewSettingsModel>/phone}" />
+                        <CheckBox
+                            text="{i18n>colCountry}"
+                            selected="{viewSettingsModel>/country}" />
+                        <CheckBox
+                            text="{i18n>colCategory}"
+                            selected="{viewSettingsModel>/category}" />
+                        <CheckBox
+                            text="{i18n>colTaxId}"
+                            selected="{viewSettingsModel>/taxId}" />
+                        <CheckBox
+                            text="{i18n>colWebsite}"
+                            selected="{viewSettingsModel>/website}" />
+                        <CheckBox
+                            text="{i18n>colAddress}"
+                            selected="{viewSettingsModel>/address}" />
+                        <CheckBox
+                            text="{i18n>colNotes}"
+                            selected="{viewSettingsModel>/notes}" />
+                    </VBox>
+                </content>
             </ViewSettingsCustomTab>
         </customTabs>
     </ViewSettingsDialog>

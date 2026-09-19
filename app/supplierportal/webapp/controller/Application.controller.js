@@ -139,11 +139,20 @@ sap.ui.define([
             submission.statusIcon = statusMeta.icon;
             submission.statusNotice = statusMeta.notice;
             submission.noticeType = statusMeta.noticeType;
-            if (submission.createdAt) {
+            var rawDate = submission.submissionDate || submission.createdAt;
+            if (rawDate) {
               try {
-                submission.submissionDate = new Date(submission.createdAt).toLocaleDateString();
+                var oDate = new Date(rawDate);
+                if (!isNaN(oDate.getTime())) {
+                  var day = String(oDate.getDate()).padStart(2, "0");
+                  var month = String(oDate.getMonth() + 1).padStart(2, "0");
+                  var year = oDate.getFullYear();
+                  submission.submissionDate = day + "." + month + "." + year;
+                } else {
+                  submission.submissionDate = String(rawDate);
+                }
               } catch (e) {
-                submission.submissionDate = submission.createdAt;
+                submission.submissionDate = String(rawDate);
               }
             } else {
               submission.submissionDate = "-";
@@ -512,6 +521,8 @@ sap.ui.define([
             sErrorMsg = data.error.message;
           } else if (data && data.message) {
             sErrorMsg = data.message;
+          } else if (response.status === 401) {
+            sErrorMsg = oBundle.getText("authErrInvalidCredentials");
           }
           oModel.setProperty("/hasError", true);
           oModel.setProperty("/errorMessage", sErrorMsg);
@@ -822,6 +833,8 @@ sap.ui.define([
             sErrorMsg = data.error.message;
           } else if (data && data.message) {
             sErrorMsg = data.message;
+          } else if (response.status === 401) {
+            sErrorMsg = oBundle.getText("authErrInvalidCredentials");
           }
           oModel.setProperty("/hasError", true);
           oModel.setProperty("/errorMessage", sErrorMsg);

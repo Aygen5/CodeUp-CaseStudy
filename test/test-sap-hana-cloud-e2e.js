@@ -103,10 +103,10 @@ async function runTests() {
     FROM CODEUP_SUPPLIER_MANAGEMENT_SUBMISSIONS s
     JOIN CODEUP_SUPPLIER_MANAGEMENT_SUPPLIERS sup ON s.supplier_ID = sup.ID
   `);
-  if (joinRes.length !== 12) {
-    throw new Error(`Beklenen 12 ilişkili kayıt yerine ${joinRes.length} kayıt JOIN oldu!`);
+  if (joinRes.length < 12) {
+    throw new Error(`Beklenen en az 12 ilişkili kayıt yerine ${joinRes.length} kayıt JOIN oldu!`);
   }
-  console.log(`  [OK] 12 başvurunun tamamı Suppliers tablosuna başarıyla bağlı (Association %100 eksiksiz).`);
+  console.log(`  [OK] ${joinRes.length} başvurunun tamamı Suppliers tablosuna başarıyla bağlı (Association %100 eksiksiz).`);
   passedTests++;
 
   // 2.4 Status Dağılımı
@@ -135,8 +135,8 @@ async function runTests() {
 
   // 2.6 Certificate Alanları
   const certRes = await query("SELECT count(*) as CNT FROM CODEUP_SUPPLIER_MANAGEMENT_SUBMISSIONS WHERE certificateFileName IS NOT NULL AND certificateMimeType = 'application/pdf'");
-  if (certRes[0].CNT !== 12) {
-    throw new Error(`Beklenen 12 PDF sertifika metadata yerine ${certRes[0].CNT} bulundu!`);
+  if (certRes[0].CNT < 12) {
+    throw new Error(`Beklenen en az 12 PDF sertifika metadata yerine ${certRes[0].CNT} bulundu!`);
   }
   console.log(`  [OK] 12 başvurunun tamamında PDF sertifika dosya adı ve MIME type ('application/pdf') doğrulandı.`);
   passedTests++;

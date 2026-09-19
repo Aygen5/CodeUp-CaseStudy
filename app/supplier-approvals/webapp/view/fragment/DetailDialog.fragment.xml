@@ -119,9 +119,20 @@
                     <VBox class="sapUiSmallMargin">
                         <HBox alignItems="Center" justifyContent="SpaceBetween" wrap="Wrap" class="sapUiSmallMarginBottom">
                             <HBox alignItems="Center">
-                                <core:Icon src="sap-icon://pdf-attachment" size="2rem" color="#e5252a" class="sapUiSmallMarginEnd" />
+                                <core:Icon
+                                    src="sap-icon://pdf-attachment"
+                                    size="2rem"
+                                    color="#e5252a"
+                                    class="sapUiSmallMarginEnd"
+                                    press=".onOpenPdfInNewTab"
+                                    tooltip="{i18n>btnOpenInNewTab}" />
                                 <VBox>
-                                    <Text text="{= ${detailModel>/certificateFileName} || ${i18n>msgNoCertificate} }" design="Bold" />
+                                    <Link
+                                        text="{= ${detailModel>/certificateFileName} || ${i18n>msgNoCertificate} }"
+                                        press=".onOpenPdfInNewTab"
+                                        enabled="{detailModel>/hasPdf}"
+                                        design="Subtle"
+                                        tooltip="{i18n>btnOpenInNewTab}" />
                                     <Text text="{= ${detailModel>/certificateMimeType} || 'application/pdf' }" />
                                 </VBox>
                             </HBox>
@@ -228,6 +239,16 @@
             </VBox>
         </content>
         <buttons>
+            <!-- AI ile Analiz Et Butonu (Sertifika varsa) -->
+            <Button
+                id="btnAnalyzeAi"
+                text="{i18n>btnAnalyzeAi}"
+                icon="sap-icon://activate"
+                press=".onAnalyzeCertificate"
+                visible="{detailModel>/hasPdf}"
+                busy="{detailModel>/aiBusy}"
+                enabled="{= !${detailModel>/aiBusy} &amp;&amp; !${detailModel>/actionBusy} }" />
+
             <!-- Onayla Butonu (Sadece Pending veya InReview durumlarında) -->
             <Button
                 id="btnApprove"
@@ -249,16 +270,6 @@
                 visible="{= ${detailModel>/status} === 'Pending' || ${detailModel>/status} === 'InReview' }"
                 busy="{detailModel>/actionBusy}"
                 enabled="{= !${detailModel>/actionBusy} &amp;&amp; !${detailModel>/aiBusy} }" />
-
-            <!-- AI ile Analiz Et Butonu (Sertifika varsa) -->
-            <Button
-                id="btnAnalyzeAi"
-                text="{i18n>btnAnalyzeAi}"
-                icon="sap-icon://activate"
-                press=".onAnalyzeCertificate"
-                visible="{detailModel>/hasPdf}"
-                busy="{detailModel>/aiBusy}"
-                enabled="{= !${detailModel>/aiBusy} &amp;&amp; !${detailModel>/actionBusy} }" />
 
             <!-- Kapat Butonu -->
             <Button

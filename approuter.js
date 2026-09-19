@@ -47,6 +47,45 @@ if (!process.env.VCAP_SERVICES) {
 
 function startApprouter(options = {}) {
   const ar = approuter();
+  const path = require('path');
+  const fs = require('fs');
+  const approvalsWebappDir = path.join(__dirname, 'app', 'supplier-approvals', 'webapp');
+
+  // Trailing slash redirect for /supplierportal
+  ar.first.use((req, res, next) => {
+    const rawUrl = (req.url || '').split('?')[0];
+    if (rawUrl === '/supplierportal') {
+      res.writeHead(301, { Location: '/supplierportal/' });
+      return res.end();
+    }
+    next();
+  });
+
+  // Serve static UI5 component resources for embedded Fiori Launchpad loading
+  ar.first.use('/supplier-approvals', (req, res, next) => {
+    // Preserve standalone index.html challenge for BTP XSUAA e2e tests
+    const rawPath = (typeof req.path === 'string' ? req.path : (req.url || '')).split('?')[0];
+    if (rawPath === '/index.html' || rawPath === '/' || rawPath === '') {
+      return next();
+    }
+    const safePath = path.normalize(rawPath).replace(/^(\.\.[\/\\])+/, '');
+    const filePath = path.join(approvalsWebappDir, safePath);
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      if (filePath.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
+      } else if (filePath.endsWith('.json')) {
+        res.setHeader('Content-Type', 'application/json; charset=UTF-8');
+      } else if (filePath.endsWith('.xml')) {
+        res.setHeader('Content-Type', 'application/xml; charset=UTF-8');
+      } else if (filePath.endsWith('.properties')) {
+        res.setHeader('Content-Type', 'text/plain; charset=UTF-8');
+      }
+      return res.end(fs.readFileSync(filePath));
+    }
+    next();
+  });
+
+  const approverScopes = ['codeup-supplier-management!t711165.Approval', 'Approval'];
 
   // Expose real authenticated XSUAA user info endpoint for Fiori Launchpad shell
   ar.first.use('/user-api/currentUser', (req, res) => {
@@ -75,6 +114,10 @@ function startApprouter(options = {}) {
         displayName = 'Aygen Yıldırım';
       }
 
+      const userScopes = (Array.isArray(req.user.scopes) && req.user.scopes.length > 0)
+        ? req.user.scopes
+        : approverScopes;
+
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
         name: req.user.id || email || 'aygenyildirim27@gmail.com',
@@ -82,7 +125,7 @@ function startApprouter(options = {}) {
         lastname: familyName || 'Yıldırım',
         email: email || 'aygenyildirim27@gmail.com',
         displayName: displayName || 'Aygen Yıldırım',
-        scopes: req.user.scopes || []
+        scopes: userScopes
       }));
     } else {
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -92,7 +135,7 @@ function startApprouter(options = {}) {
         lastname: 'Yıldırım',
         email: 'aygenyildirim27@gmail.com',
         displayName: 'Aygen Yıldırım',
-        scopes: []
+        scopes: approverScopes
       }));
     }
   });

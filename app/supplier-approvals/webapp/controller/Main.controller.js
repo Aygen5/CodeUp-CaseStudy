@@ -319,6 +319,19 @@ sap.ui.define([
          */
         onOpenViewSettings: function () {
             var oView = this.getView();
+            var oViewModel = oView.getModel("viewModel");
+            
+            // Create a copy of the columns state for the dialog
+            var oColumnsCopy = JSON.parse(JSON.stringify(oViewModel.getProperty("/columns")));
+            
+            var oViewSettingsModel = oView.getModel("viewSettingsModel");
+            if (!oViewSettingsModel) {
+                oViewSettingsModel = new JSONModel(oColumnsCopy);
+                oView.setModel(oViewSettingsModel, "viewSettingsModel");
+            } else {
+                oViewSettingsModel.setData(oColumnsCopy);
+            }
+
             if (!this._pViewSettingsDialog) {
                 this._pViewSettingsDialog = Fragment.load({
                     id: oView.getId(),
@@ -339,8 +352,15 @@ sap.ui.define([
          * @param {sap.ui.base.Event} oEvent
          */
         onConfirmViewSettings: function (oEvent) {
-            var oViewModel = this.getView().getModel("viewModel");
+            var oView = this.getView();
+            var oViewModel = oView.getModel("viewModel");
+            var oViewSettingsModel = oView.getModel("viewSettingsModel");
             var mParams = oEvent.getParameters();
+
+            // Apply column visibility changes from temporary model to main model
+            if (oViewSettingsModel) {
+                oViewModel.setProperty("/columns", oViewSettingsModel.getData());
+            }
 
             // Sorter settings
             if (mParams.sortItem) {
@@ -362,10 +382,15 @@ sap.ui.define([
          * Resets ViewSettingsDialog filters.
          */
         onResetViewSettings: function () {
-            var oViewModel = this.getView().getModel("viewModel");
+            var oView = this.getView();
+            var oViewModel = oView.getModel("viewModel");
+            
+            // Note: In standard ViewSettingsDialog, reset does not reset columns.
+            // It only resets Sort, Group, and Filter to default.
             oViewModel.setProperty("/sortField", "submissionDate");
             oViewModel.setProperty("/sortDescending", true);
             oViewModel.setProperty("/selectedCategory", "");
+            
             this._applyFiltersAndSorting();
         },
 
@@ -501,27 +526,38 @@ sap.ui.define([
                     }
                 }.bind(this), 0);
 
+                var bHasCertName = !!(oSubmission.certificateFileName && oSubmission.certificateFileName.trim());
+                oDetailModel.setProperty("/hasPdf", bHasCertName);
+
                 // Fetch real certificate binary stream for inline preview
                 var sDirectPdfUrl = "/odata/v4/approval/Submissions(" + sId + ")/certificate";
                 oDetailModel.setProperty("/pdfDirectUrl", sDirectPdfUrl);
 
-                var oCertResponse = await fetch(sDirectPdfUrl, {
-                    method: "GET",
-                    headers: this._getAuthHeaders()
-                });
+                var oCertHeaders = Object.assign({}, this._getAuthHeaders());
+                delete oCertHeaders["Accept"];
+                oCertHeaders["Accept"] = "*/*";
 
-                if (oCertResponse.ok) {
-                    var oBlob = await oCertResponse.blob();
-                    if (oBlob && oBlob.size > 0) {
-                        var sBlobUrl = URL.createObjectURL(oBlob);
-                        oDetailModel.setProperty("/pdfBlobUrl", sBlobUrl);
-                        oDetailModel.setProperty("/pdfUrl", sBlobUrl);
-                        oDetailModel.setProperty("/hasPdf", true);
+                try {
+                    var oCertResponse = await fetch(sDirectPdfUrl, {
+                        method: "GET",
+                        headers: oCertHeaders
+                    });
+
+                    if (oCertResponse.ok) {
+                        var oBlob = await oCertResponse.blob();
+                        if (oBlob && oBlob.size > 0) {
+                            var sBlobUrl = URL.createObjectURL(oBlob);
+                            oDetailModel.setProperty("/pdfBlobUrl", sBlobUrl);
+                            oDetailModel.setProperty("/pdfUrl", sBlobUrl);
+                            oDetailModel.setProperty("/hasPdf", true);
+                        } else {
+                            oDetailModel.setProperty("/hasPdf", bHasCertName);
+                        }
                     } else {
-                        oDetailModel.setProperty("/hasPdf", false);
+                        oDetailModel.setProperty("/hasPdf", bHasCertName);
                     }
-                } else {
-                    oDetailModel.setProperty("/hasPdf", false);
+                } catch (e) {
+                    oDetailModel.setProperty("/hasPdf", bHasCertName);
                 }
             } catch (oErr) {
                 MessageToast.show(oBundle.getText("msgError") + " (" + oErr.message + ")");
@@ -654,13 +690,57 @@ sap.ui.define([
         },
 
         /**
-         * Opens the certificate PDF stream in a new browser tab.
+         * Opens the certificate PDF stream in a new browser tab and triggers download.
          */
-        onOpenPdfInNewTab: function () {
+        onOpenPdfInNewTab: async function () {
             var oDetailModel = this.getView().getModel("detailModel");
-            var sUrl = oDetailModel.getProperty("/pdfBlobUrl") || oDetailModel.getProperty("/pdfDirectUrl");
-            if (sUrl && typeof window !== "undefined") {
-                window.open(sUrl, "_blank");
+            var sUrl = oDetailModel.getProperty("/pdfBlobUrl");
+            var sDirectUrl = oDetailModel.getProperty("/pdfDirectUrl");
+            var sFileName = oDetailModel.getProperty("/certificateFileName") || "certificate.pdf";
+            var sId = oDetailModel.getProperty("/ID");
+
+            // If blob url is not yet available, attempt to fetch it now
+            if (!sUrl && sId) {
+                try {
+                    var oCertHeaders = Object.assign({}, this._getAuthHeaders());
+                    delete oCertHeaders["Accept"];
+                    oCertHeaders["Accept"] = "*/*";
+                    var oCertResponse = await fetch("/odata/v4/approval/Submissions(" + sId + ")/certificate", {
+                        method: "GET",
+                        headers: oCertHeaders
+                    });
+                    if (oCertResponse.ok) {
+                        var oBlob = await oCertResponse.blob();
+                        if (oBlob && oBlob.size > 0) {
+                            sUrl = URL.createObjectURL(oBlob);
+                            oDetailModel.setProperty("/pdfBlobUrl", sUrl);
+                            oDetailModel.setProperty("/pdfUrl", sUrl);
+                        }
+                    }
+                } catch (e) {
+                    // Fallback to direct URL
+                }
+            }
+
+            var sTargetUrl = sUrl || sDirectUrl;
+
+            if (sTargetUrl && typeof window !== "undefined") {
+                // 1. Open in new browser tab
+                window.open(sTargetUrl, "_blank");
+
+                // 2. Also trigger direct download if blob URL is available
+                if (sUrl && sUrl.startsWith("blob:")) {
+                    try {
+                        var oDownloadLink = document.createElement("a");
+                        oDownloadLink.href = sUrl;
+                        oDownloadLink.download = sFileName;
+                        document.body.appendChild(oDownloadLink);
+                        oDownloadLink.click();
+                        document.body.removeChild(oDownloadLink);
+                    } catch (err) {
+                        // ignore anchor click error
+                    }
+                }
             }
         },
 
