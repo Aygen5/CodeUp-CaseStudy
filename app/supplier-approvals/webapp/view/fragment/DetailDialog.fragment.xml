@@ -225,7 +225,7 @@
 
                         <!-- AI Red Önerisi Durumunda Hızlı Aksiyon -->
                         <HBox
-                            visible="{= ${detailModel>/aiReport/validityStatus} !== 'Valid' || (${detailModel>/aiReport/recommendation} &amp;&amp; ${detailModel>/aiReport/recommendation}.indexOf('Reddet') !== -1) }"
+                            visible="{= ${detailModel>/aiReport/validityStatus} !== 'Valid' || (${detailModel>/aiReport/recommendation} ? ${detailModel>/aiReport/recommendation}.indexOf('Reddet') !== -1 : false) }"
                             class="sapUiSmallMarginTop">
                             <Button
                                 id="btnQuickRejectWithAi"

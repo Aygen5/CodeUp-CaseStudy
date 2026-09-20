@@ -1164,21 +1164,31 @@ sap.ui.define([
                 var oReport = await oResponse.json();
                 var oAiData = oReport && oReport.value ? oReport.value : oReport;
 
+                var sValidityStatus = (oAiData && oAiData.validityStatus) ? oAiData.validityStatus : "Invalid";
+                var sRecommendation = (oAiData && oAiData.recommendation)
+                    ? String(oAiData.recommendation)
+                    : (sValidityStatus === "Valid" ? "Öneri: Onayla" : "Öneri: Reddet");
+
                 // Bind strictly to backend AIReport fields
                 oDetailModel.setProperty("/aiReport", {
-                    validityStatus: oAiData.validityStatus || "Invalid",
-                    recommendation: oAiData.recommendation || "",
-                    reason: oAiData.reason || "",
-                    suggestedFields: oAiData.suggestedFields || "",
-                    analyzedAt: oAiData.analyzedAt || new Date().toISOString(),
-                    fileName: oAiData.fileName || oDetailModel.getProperty("/certificateFileName") || "certificate.pdf"
+                    validityStatus: sValidityStatus,
+                    recommendation: sRecommendation,
+                    reason: (oAiData && oAiData.reason) ? String(oAiData.reason) : "",
+                    suggestedFields: (oAiData && oAiData.suggestedFields) ? String(oAiData.suggestedFields) : "",
+                    analyzedAt: (oAiData && oAiData.analyzedAt) ? String(oAiData.analyzedAt) : new Date().toISOString(),
+                    fileName: (oAiData && oAiData.fileName) || oDetailModel.getProperty("/certificateFileName") || "certificate.pdf"
                 });
                 oDetailModel.setProperty("/hasAiReport", true);
 
                 MessageToast.show(oBundle.getText("msgAiAnalysisSuccess"));
             } catch (oErr) {
                 oDetailModel.setProperty("/hasAiReport", false);
-                MessageBox.error(oBundle.getText("errAiDestinationFailed") + " (" + oErr.message + ")");
+                var sErrorMsg = oErr && oErr.message ? oErr.message : "";
+                if (sErrorMsg.includes("is of type") || sErrorMsg.includes("expected boolean")) {
+                    MessageBox.error(oBundle.getText("msgError") + " (" + sErrorMsg + ")");
+                } else {
+                    MessageBox.error(oBundle.getText("errAiDestinationFailed") + (sErrorMsg ? " (" + sErrorMsg + ")" : ""));
+                }
             } finally {
                 oDetailModel.setProperty("/aiBusy", false);
             }
