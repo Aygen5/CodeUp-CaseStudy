@@ -276,21 +276,16 @@ sap.ui.define([
             }
 
             // Combine all filter groups with AND
-            var oFinalFilter = aFilters.length > 0 ? new Filter({ filters: aFilters, and: true }) : [];
-            oBinding.filter(oFinalFilter);
+            if (aFilters.length === 0) {
+                oBinding.filter([]);
+            } else if (aFilters.length === 1) {
+                oBinding.filter(aFilters[0]);
+            } else {
+                oBinding.filter(new Filter({ filters: aFilters, and: true }));
+            }
 
-            // Chronological Timestamp / Date comparator
-            var oSorter = new Sorter(sSortField, bSortDescending, false, function (a, b) {
-                if (sSortField === "submissionDate") {
-                    var dA = a ? new Date(a).getTime() : 0;
-                    var dB = b ? new Date(b).getTime() : 0;
-                    return dA - dB;
-                }
-                var sA = (a || "").toString();
-                var sB = (b || "").toString();
-                return sA.localeCompare(sB);
-            });
-            oBinding.sort(oSorter);
+            // Sorter
+            oBinding.sort(new Sorter(sSortField, bSortDescending));
 
             oViewModel.setProperty("/filteredCount", oBinding.getLength());
         },
@@ -394,14 +389,6 @@ sap.ui.define([
             oViewModel.setProperty("/sortField", "submissionDate");
             oViewModel.setProperty("/sortDescending", true);
             oViewModel.setProperty("/selectedCategory", "");
-
-            if (this._pViewSettingsDialog) {
-                this._pViewSettingsDialog.then(function (oDialog) {
-                    if (oDialog && typeof oDialog.clearFilters === "function") {
-                        oDialog.clearFilters();
-                    }
-                });
-            }
             
             this._applyFiltersAndSorting();
         },
@@ -438,25 +425,21 @@ sap.ui.define([
                 oSearchField.setValue("");
             }
 
-            // 5. Reset IconTabBar UI and visual tab selection
+            // 5. Reset IconTabBar UI
             var oTabBar = this.byId("iconTabBar");
-            var oTabAll = this.byId("tabAll");
             if (oTabBar) {
                 oTabBar.setSelectedKey("all");
-                if (oTabAll && typeof oTabBar.setSelectedItem === "function") {
-                    oTabBar.setSelectedItem(oTabAll);
-                }
             }
 
-            // 6. Reset ViewSettingsDialog control (clear category filter items & reset sort item)
+            // 6. Reset ViewSettingsDialog control state safely without triggering recursive events
             if (this._pViewSettingsDialog) {
                 this._pViewSettingsDialog.then(function (oDialog) {
                     if (oDialog) {
-                        if (typeof oDialog.clearFilters === "function") {
-                            oDialog.clearFilters();
+                        if (typeof oDialog.setSelectedFilterKeys === "function") {
+                            oDialog.setSelectedFilterKeys({});
                         }
                         var aSortItems = typeof oDialog.getSortItems === "function" ? oDialog.getSortItems() : [];
-                        if (aSortItems && aSortItems.length > 0) {
+                        if (aSortItems && aSortItems.length > 0 && typeof oDialog.setSelectedSortItem === "function") {
                             oDialog.setSelectedSortItem(aSortItems[0]);
                         }
                         if (typeof oDialog.setSortDescending === "function") {
