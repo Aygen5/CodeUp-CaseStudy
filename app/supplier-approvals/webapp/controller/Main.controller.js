@@ -133,7 +133,8 @@ sap.ui.define([
          */
         _getAuthHeaders: function () {
             var oHeaders = {
-                "Accept": "application/json"
+                "Accept": "application/json",
+                "X-Requested-With": "XMLHttpRequest"
             };
             var sStoredAuth = typeof window !== "undefined" && window.localStorage ? window.localStorage.getItem("codeup_approver_auth") : null;
             if (sStoredAuth) {
@@ -164,7 +165,10 @@ sap.ui.define([
                     headers: this._getAuthHeaders()
                 });
 
-                if (oResponse.status === 401) {
+                var sContentType = (oResponse.headers.get("content-type") || "").toLowerCase();
+
+                // If session expired or Approuter returned OAuth2 login challenge redirect
+                if (oResponse.status === 401 || (oResponse.ok && sContentType.includes("text/html"))) {
                     oViewModel.setProperty("/hasAuthError", true);
                     oViewModel.setProperty("/authErrorMessage", oBundle.getText("msgAuthRequired"));
                     oSubmissionsModel.setProperty("/items", []);
@@ -490,6 +494,12 @@ sap.ui.define([
                     method: "GET",
                     headers: this._getAuthHeaders()
                 });
+
+                var sContentType = (oResponse.headers.get("content-type") || "").toLowerCase();
+                if (oResponse.status === 401 || (oResponse.ok && sContentType.includes("text/html"))) {
+                    MessageToast.show(oBundle.getText("msgAuthRequired"));
+                    return;
+                }
 
                 if (!oResponse.ok) {
                     throw new Error("HTTP " + oResponse.status);

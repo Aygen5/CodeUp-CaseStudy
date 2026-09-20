@@ -299,10 +299,10 @@ async function handleAnalyzeCertificate(submissionId, req) {
 
   try {
     const result = typeof geminiService.post === 'function'
-      ? await geminiService.post('/models/gemini-1.5-flash:generateContent', geminiPayload)
+      ? await geminiService.post('/models/gemini-3.5-flash-lite:generateContent', geminiPayload)
       : await geminiService.send({
           method: 'POST',
-          path: '/models/gemini-1.5-flash:generateContent',
+          path: '/models/gemini-3.5-flash-lite:generateContent',
           data: geminiPayload,
           headers: {
             'Content-Type': 'application/json'

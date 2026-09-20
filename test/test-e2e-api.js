@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const BASE_URL = 'http://localhost:4004';
+const BASE_URL = process.env.CAP_URL || `http://localhost:${process.env.PORT || '5001'}`;
 
 const approverHeaders = {
   authorization: 'Basic ' + Buffer.from('approver:').toString('base64'),

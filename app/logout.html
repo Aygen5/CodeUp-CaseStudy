@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeUp — Oturum Kapatıldı</title>
+    <script
+        id="sap-ui-bootstrap"
+        src="https://ui5.sap.com/resources/sap-ui-core.js"
+        data-sap-ui-theme="sap_horizon"
+        data-sap-ui-libs="sap.m"
+        data-sap-ui-compatVersion="edge"
+        data-sap-ui-async="true">
+    </script>
+    <script>
+        // Oturum kalıntılarını ve tokenları anında temizle
+        try {
+            localStorage.clear();
+            sessionStorage.clear();
+        } catch (e) {}
+
+        sap.ui.getCore().attachInit(function () {
+            var isTr = (navigator.language || navigator.userLanguage || '').toLowerCase().startsWith('tr');
+            
+            var texts = {
+                pageTitle: "CodeUp Supplier Management",
+                title: isTr ? "Oturum Başarıyla Kapatıldı" : "Session Successfully Ended",
+                description: isTr 
+                    ? "CodeUp Tedarikçi Yönetim Portalı ve Fiori Launchpad oturumunuz güvenli bir şekilde sonlandırıldı." 
+                    : "Your CodeUp Supplier Management and Fiori Launchpad session has been safely closed.",
+                reloginBtn: isTr ? "Fiori Launchpad ile Tekrar Giriş Yap" : "Log In Again with Fiori Launchpad",
+                supplierPortalBtn: isTr ? "Tedarikçi Giriş Ekranına Git" : "Go to Supplier Portal"
+            };
+
+            var oApp = new sap.m.App();
+            var oPage = new sap.m.Page({
+                showHeader: true,
+                title: texts.pageTitle,
+                content: [
+                    new sap.m.VBox({
+                        alignItems: "Center",
+                        justifyContent: "Center",
+                        items: [
+                            new sap.m.IllustratedMessage({
+                                illustrationType: "sapIllus-SuccessScreen",
+                                illustrationSize: "Scene",
+                                title: texts.title,
+                                description: texts.description,
+                                additionalContent: [
+                                    new sap.m.HBox({
+                                        justifyContent: "Center",
+                                        items: [
+                                            new sap.m.Button({
+                                                text: texts.reloginBtn,
+                                                type: "Emphasized",
+                                                icon: "sap-icon://log-in",
+                                                press: function () {
+                                                    window.location.href = "/index.html";
+                                                }
+                                            }).addStyleClass("sapUiTinyMarginEnd"),
+                                            new sap.m.Button({
+                                                text: texts.supplierPortalBtn,
+                                                type: "Default",
+                                                icon: "sap-icon://customer",
+                                                press: function () {
+                                                    window.location.href = "/supplierportal/index.html";
+                                                }
+                                            })
+                                        ]
+                                    }).addStyleClass("sapUiSmallMarginTop")
+                                ]
+                            }).addStyleClass("sapUiLargeMarginTop")
+                        ]
+                    })
+                ]
+            });
+
+            oApp.addPage(oPage);
+            oApp.placeAt("content");
+        });
+    </script>
+</head>
+<body class="sapUiBody">
+    <div id="content"></div>
+</body>
+</html>

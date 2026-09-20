@@ -3,7 +3,7 @@
   "destinations": [
     {
       "name": "srv-api",
-      "url": "http://localhost:4004",
+      "url": "http://localhost:5001",
       "forwardAuthToken": true
     }
   ],

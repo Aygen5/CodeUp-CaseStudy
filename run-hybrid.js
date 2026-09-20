@@ -1,7 +1,7 @@
 /**
  * Unified Hybrid Runner for CodeUp Supplier Management
  * Starts both:
- * 1. CAP Backend (HANA + XSUAA) on port 4004 via `cds run --profile hybrid`
+ * 1. CAP Backend (HANA + XSUAA) on port 5001 via `cds run --profile hybrid`
  * 2. SAP Approuter on port 5000 via `node approuter.js`
  */
 const { spawn, exec } = require('child_process');
@@ -11,7 +11,7 @@ console.log('CodeUp Supplier Management — Hibrit Geliştirme Ortamı Başlatı
 console.log('Hedef Veritabanı : SAP HANA (Kural 2)');
 console.log('Kimlik Doğrulama : SAP BTP XSUAA (Hybrid)');
 console.log('Fiori Launchpad  : http://localhost:5000');
-console.log('CAP Backend      : http://localhost:4004');
+console.log('CAP Backend      : http://localhost:5001');
 console.log('Durdurmak için   : CTRL + C');
 console.log('================================================================\n');
 
@@ -34,7 +34,7 @@ const capCmd = isWin ? 'npx.cmd' : 'npx';
 const capProcess = spawn(capCmd, ['cds', 'run', '--profile', 'hybrid'], {
   cwd: __dirname,
   shell: isWin,
-  env: { ...process.env }
+  env: { ...process.env, PORT: '5001' }
 });
 
 capProcess.stdout.on('data', (data) => {

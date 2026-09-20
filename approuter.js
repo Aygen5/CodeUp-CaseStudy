@@ -1,6 +1,6 @@
 /**
  * SAP Approuter Starter for CodeUp Supplier Management
- * Listens on port 5000 and reverse proxies requests to CAP backend (4004)
+ * Listens on port 5000 and reverse proxies requests to CAP backend (5001)
  * and UI5 applications (app/supplierportal, app/supplier-approvals).
  */
 const approuter = require('@sap/approuter');
@@ -19,7 +19,7 @@ if (!process.env.destinations) {
   process.env.destinations = JSON.stringify([
     {
       name: 'srv-api',
-      url: 'http://localhost:4004',
+      url: 'http://localhost:5001',
       forwardAuthToken: true
     }
   ]);
@@ -51,11 +51,23 @@ function startApprouter(options = {}) {
   const fs = require('fs');
   const approvalsWebappDir = path.join(__dirname, 'app', 'supplier-approvals', 'webapp');
 
-  // Trailing slash redirect for /supplierportal
+  // Trailing slash redirect for /supplierportal and /login convenience redirect
   ar.first.use((req, res, next) => {
     const rawUrl = (req.url || '').split('?')[0];
+    if (rawUrl === '/logout.html') {
+      const logoutHtmlPath = path.join(__dirname, 'app', 'logout.html');
+      if (fs.existsSync(logoutHtmlPath)) {
+        res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        return res.end(fs.readFileSync(logoutHtmlPath));
+      }
+    }
     if (rawUrl === '/supplierportal') {
       res.writeHead(301, { Location: '/supplierportal/' });
+      return res.end();
+    }
+    if (rawUrl === '/login') {
+      res.writeHead(302, { Location: '/index.html' });
       return res.end();
     }
     next();
@@ -85,8 +97,6 @@ function startApprouter(options = {}) {
     next();
   });
 
-  const approverScopes = ['codeup-supplier-management!t711165.Approval', 'Approval'];
-
   // Expose real authenticated XSUAA user info endpoint for Fiori Launchpad shell
   ar.first.use('/user-api/currentUser', (req, res) => {
     if (req.user) {
@@ -114,9 +124,8 @@ function startApprouter(options = {}) {
         displayName = 'Aygen Yıldırım';
       }
 
-      const userScopes = (Array.isArray(req.user.scopes) && req.user.scopes.length > 0)
-        ? req.user.scopes
-        : approverScopes;
+      // 100% Gerçek BTP XSUAA Token Kapsamları (Sıfır sahte/mock yetki)
+      const userScopes = Array.isArray(req.user.scopes) ? req.user.scopes : [];
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
@@ -135,7 +144,7 @@ function startApprouter(options = {}) {
         lastname: 'Yıldırım',
         email: 'aygenyildirim27@gmail.com',
         displayName: 'Aygen Yıldırım',
-        scopes: approverScopes
+        scopes: []
       }));
     }
   });

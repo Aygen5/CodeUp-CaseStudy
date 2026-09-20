@@ -29,7 +29,11 @@
                     showIcon="true"
                     showCloseButton="false"
                     class="sapUiSmallMarginBottom"
-                    visible="{viewModel>/hasAuthError}" />
+                    visible="{viewModel>/hasAuthError}">
+                    <link>
+                        <Link text="{i18n>btnLoginWithBtp}" href="/supplier-approvals/index.html" target="_self" />
+                    </link>
+                </MessageStrip>
 
                 <!-- Status Tabs & Submissions Table Section -->
                 <IconTabBar

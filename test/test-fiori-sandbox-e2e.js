@@ -167,7 +167,7 @@ async function runTests() {
   process.env.destinations = JSON.stringify([
     {
       name: 'srv-api',
-      url: 'http://localhost:4004',
+      url: 'http://localhost:5001',
       forwardAuthToken: true
     }
   ]);

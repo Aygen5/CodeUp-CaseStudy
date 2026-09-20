@@ -269,6 +269,10 @@
 
             // Register custom logout hook to redirect to Approuter's /logout route
             sap.ushell.Container.registerLogout(function () {
+                try {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                } catch (e) {}
                 window.location.href = '/logout';
             });
 
