@@ -419,13 +419,16 @@ class PublicService extends cds.ApplicationService {
           }
         } else {
           if (req.data[key] !== undefined && req.data[key] !== null) {
-            const newValue = typeof req.data[key] === 'string' ? req.data[key].trim() : req.data[key];
-            const oldValue = submission[key];
-            if (newValue !== oldValue) {
+            const rawNew = typeof req.data[key] === 'string' ? req.data[key].trim() : req.data[key];
+            const rawOld = typeof submission[key] === 'string' ? submission[key].trim() : submission[key];
+            const normNew = (rawNew === '' || rawNew === null || rawNew === undefined) ? null : rawNew;
+            const normOld = (rawOld === '' || rawOld === null || rawOld === undefined) ? null : rawOld;
+
+            if (normNew !== normOld) {
               if (!allowedFields.has(key)) {
                 return req.reject(400, `'${key}' alanını düzenleme izniniz bulunmamaktadır. İzin verilen alanlar: ${submission.editableFields}`);
               }
-              updates[key] = newValue;
+              updates[key] = normNew;
             }
           }
         }

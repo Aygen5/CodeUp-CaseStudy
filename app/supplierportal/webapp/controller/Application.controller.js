@@ -791,7 +791,7 @@ sap.ui.define([
       };
 
       aKeys.forEach(function (k) {
-        if (oReApplyData[k] !== undefined) {
+        if (oEditableFlags[k] && oReApplyData[k] !== undefined) {
           payload[k] = typeof oReApplyData[k] === "string" ? oReApplyData[k].trim() : oReApplyData[k];
         }
       });
@@ -853,6 +853,22 @@ sap.ui.define([
 
     onLogout: function () {
       AuthManager.clearSession();
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (e) {}
+
+      var oModel = this.getView().getModel("appView");
+      if (oModel) {
+        oModel.setProperty("/isAuthenticated", false);
+        oModel.setProperty("/supplierEmail", "");
+        oModel.setProperty("/hasExistingSubmission", false);
+        oModel.setProperty("/existingSubmission", null);
+        oModel.setProperty("/isReApplyMode", false);
+        oModel.setProperty("/hasError", false);
+        oModel.setProperty("/hasSuccess", false);
+      }
+
       this._navToAuth();
     },
 
@@ -864,12 +880,10 @@ sap.ui.define([
       if (oRouter && oRouter.getTargets()) {
         try {
           oRouter.getTargets().display("auth");
-        } catch (e) {
-          // Targets display hatası
-        }
+        } catch (e) {}
       }
 
-      // 2. Standart Router navTo çağrısı (Standalone ve hash geçmişi desteği için)
+      // 2. Standart Router navTo çağrısı
       if (oRouter) {
         try {
           oRouter.navTo("auth", {}, {}, true);
@@ -890,6 +904,15 @@ sap.ui.define([
           }
         }
       } catch (e) {}
+
+      // 4. Standalone ve FLP Sandbox güvenilir oturum kapatma yönlendirmesi
+      if (typeof window !== "undefined" && window.location) {
+        if (window.location.hash && window.location.hash.indexOf("SupplierPortal-display") !== -1) {
+          window.location.reload();
+        } else if (window.location.pathname.indexOf("/supplierportal") !== -1) {
+          window.location.href = "/supplierportal/index.html";
+        }
+      }
     }
   });
 });

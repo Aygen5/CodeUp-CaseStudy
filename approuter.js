@@ -62,6 +62,14 @@ function startApprouter(options = {}) {
         return res.end(fs.readFileSync(logoutHtmlPath));
       }
     }
+    if (rawUrl === '/img/supplier_hero.jpg' || rawUrl === '/supplierportal/img/supplier_hero.jpg') {
+      const heroPath = path.join(__dirname, 'app', 'supplierportal', 'webapp', 'img', 'supplier_hero.jpg');
+      if (fs.existsSync(heroPath)) {
+        res.setHeader('Content-Type', 'image/jpeg');
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        return res.end(fs.readFileSync(heroPath));
+      }
+    }
     if (rawUrl === '/supplierportal') {
       res.writeHead(301, { Location: '/supplierportal/' });
       return res.end();

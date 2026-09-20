@@ -46,7 +46,7 @@
             renderType="Bare">
             <Image
               id="heroImage"
-              src="img/supplier_hero.jpg"
+              src="/supplierportal/img/supplier_hero.jpg"
               width="100%"
               densityAware="false"
               decorative="true"
