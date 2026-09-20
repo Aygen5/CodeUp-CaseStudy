@@ -38,7 +38,8 @@ CodeUp-CaseStudy/
 │   ├── design-system.md      # UI5 Horizon tasarım kuralları
 │   ├── project.md            # Proje isterleri ve kapsam analizi
 │   ├── roadmap.md            # Faz bazlı geliştirme yol haritası
-│   └── skills.md             # Teknik yetkinlikler ve kılavuzlar
+│   ├── skills.md             # Teknik yetkinlikler ve kılavuzlar
+│   └── AGENTS.md             # Geliştirici mimari kuralları ve ilkeleri
 │
 ├── test/                     # 🧪 Test Paketi
 │   ├── files/                # Geçerli/geçersiz test sertifikaları ve PDF örnekleri
