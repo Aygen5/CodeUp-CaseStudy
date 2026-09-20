@@ -2,9 +2,10 @@ sap.ui.define([
   "sap/ui/core/mvc/Controller",
   "sap/ui/model/json/JSONModel",
   "sap/m/MessageToast",
+  "sap/m/MessageBox",
   "codeup/supplier/portal/model/AuthManager",
   "codeup/supplier/portal/model/ThemeManager"
-], function (Controller, JSONModel, MessageToast, AuthManager, ThemeManager) {
+], function (Controller, JSONModel, MessageToast, MessageBox, AuthManager, ThemeManager) {
   "use strict";
 
   var SERVICE_BASE = "/odata/v4/public";
@@ -381,8 +382,10 @@ sap.ui.define([
       if (!sFileName.toLowerCase().endsWith(".pdf")) {
         oUploader.clear();
         this._clearCertificate();
+        var sNotPdfMsg = oBundle.getText("errFileNotPdf");
         oModel.setProperty("/hasError", true);
-        oModel.setProperty("/errorMessage", oBundle.getText("errFileNotPdf"));
+        oModel.setProperty("/errorMessage", sNotPdfMsg);
+        MessageBox.error(sNotPdfMsg);
         return;
       }
 
@@ -390,8 +393,10 @@ sap.ui.define([
       if (oFile.size > MAX_FILE_SIZE) {
         oUploader.clear();
         this._clearCertificate();
+        var sSizeMsg = oBundle.getText("errFileSizeExceeded");
         oModel.setProperty("/hasError", true);
-        oModel.setProperty("/errorMessage", oBundle.getText("errFileSizeExceeded"));
+        oModel.setProperty("/errorMessage", sSizeMsg);
+        MessageBox.error(sSizeMsg);
         return;
       }
 
@@ -672,8 +677,10 @@ sap.ui.define([
           oUploader.clear();
         }
         this._clearReApplyCertificate();
+        var sNotPdfMsg = oBundle.getText("errFileNotPdf");
         oModel.setProperty("/hasError", true);
-        oModel.setProperty("/errorMessage", oBundle.getText("errFileNotPdf"));
+        oModel.setProperty("/errorMessage", sNotPdfMsg);
+        MessageBox.error(sNotPdfMsg);
         return;
       }
 
@@ -683,8 +690,10 @@ sap.ui.define([
           oUploader.clear();
         }
         this._clearReApplyCertificate();
+        var sSizeMsg = oBundle.getText("errFileSizeExceeded");
         oModel.setProperty("/hasError", true);
-        oModel.setProperty("/errorMessage", oBundle.getText("errFileSizeExceeded"));
+        oModel.setProperty("/errorMessage", sSizeMsg);
+        MessageBox.error(sSizeMsg);
         return;
       }
 

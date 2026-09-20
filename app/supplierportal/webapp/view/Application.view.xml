@@ -344,8 +344,6 @@
                     <u:FileUploader
                       id="reApplyFileUploader"
                       name="reApplyCertificateUpload"
-                      fileType="pdf"
-                      mimeType="application/pdf"
                       uploadOnChange="false"
                       buttonOnly="false"
                       buttonText="{i18n>fileUploadButtonText}"
@@ -535,8 +533,6 @@
                     <u:FileUploader
                       id="fileUploader"
                       name="certificateFile"
-                      fileType="pdf"
-                      mimeType="application/pdf"
                       buttonText="{i18n>fileUploadButtonText}"
                       placeholder="{i18n>fileUploadPrompt}"
                       width="100%"
