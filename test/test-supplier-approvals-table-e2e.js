@@ -145,8 +145,8 @@ async function runTests() {
         if (!mainXml.includes(`viewModel>/columns/${col}`)) {
             throw new Error(`Sütun görünürlük binding'i eksik: viewModel>/columns/${col}`);
         }
-        if (!dialogXml.includes(`viewModel>/columns/${col}`)) {
-            throw new Error(`ViewSettingsDialog içinde sütun toggle binding'i eksik: viewModel>/columns/${col}`);
+        if (!dialogXml.includes(`viewModel>/columns/${col}`) && !dialogXml.includes(`viewSettingsModel>/${col}`)) {
+            throw new Error(`ViewSettingsDialog içinde sütun toggle binding'i eksik: viewModel>/columns/${col} veya viewSettingsModel>/${col}`);
         }
     }
     console.log("  [OK] 12 sütunun tamamı (5 temel + 7 ek) Table ve ViewSettingsDialog içinde yapılandırılmış.");
@@ -327,13 +327,21 @@ async function runTests() {
         }
 
     } finally {
-        server.close();
+        if (typeof cds.shutdown === 'function') {
+            await cds.shutdown();
+        }
+        await new Promise(resolve => {
+            if (server && server.close) {
+                server.close(() => resolve());
+            } else {
+                resolve();
+            }
+        });
     }
 
     console.log("\n================================================================");
     console.log("FAZ 6 — ADIM 6.2: TÜM DOĞRULAMALAR EKSİKSİZ BAŞARILI! [GEÇTİ]");
     console.log("================================================================");
-    process.exit(0);
 }
 
 runTests().catch(err => {

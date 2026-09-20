@@ -11,6 +11,21 @@ sap.ui.define([
 ], function (Controller, JSONModel, Filter, FilterOperator, Sorter, MessageToast, MessageBox, Fragment, formatter) {
     "use strict";
 
+    var DEFAULT_COLUMNS = {
+        companyName: true,
+        contactPerson: true,
+        supplierEmail: true,
+        submissionDate: true,
+        status: true,
+        phone: false,
+        country: false,
+        category: false,
+        taxId: false,
+        website: false,
+        address: false,
+        notes: false
+    };
+
     return Controller.extend("codeup.supplier.approvals.controller.Main", {
         formatter: formatter,
 
@@ -31,20 +46,7 @@ sap.ui.define([
                     approved: 0,
                     rejected: 0
                 },
-                columns: {
-                    companyName: true,
-                    contactPerson: true,
-                    supplierEmail: true,
-                    submissionDate: true,
-                    status: true,
-                    phone: false,
-                    country: false,
-                    category: false,
-                    taxId: false,
-                    website: false,
-                    address: false,
-                    notes: false
-                }
+                columns: JSON.parse(JSON.stringify(DEFAULT_COLUMNS))
             });
             this.getView().setModel(oViewModel, "viewModel");
 
@@ -389,38 +391,82 @@ sap.ui.define([
             var oView = this.getView();
             var oViewModel = oView.getModel("viewModel");
             
-            // Note: In standard ViewSettingsDialog, reset does not reset columns.
-            // It only resets Sort, Group, and Filter to default.
             oViewModel.setProperty("/sortField", "submissionDate");
             oViewModel.setProperty("/sortDescending", true);
             oViewModel.setProperty("/selectedCategory", "");
+
+            if (this._pViewSettingsDialog) {
+                this._pViewSettingsDialog.then(function (oDialog) {
+                    if (oDialog && typeof oDialog.clearFilters === "function") {
+                        oDialog.clearFilters();
+                    }
+                });
+            }
             
             this._applyFiltersAndSorting();
         },
 
         /**
-         * Clears all filters (tab, search, category) and resets to "all".
+         * Clears all filters (tab, search, category), resets columns to default 5,
+         * clears ViewSettingsDialog state and returns the list to its exact initial state.
          */
         onClearFilters: function () {
-            var oViewModel = this.getView().getModel("viewModel");
+            var oView = this.getView();
+            var oViewModel = oView.getModel("viewModel");
             var oBundle = this.getResourceBundle();
 
+            // 1. Reset view model filter & sort properties
             oViewModel.setProperty("/selectedTab", "all");
             oViewModel.setProperty("/searchQuery", "");
             oViewModel.setProperty("/selectedCategory", "");
             oViewModel.setProperty("/sortField", "submissionDate");
             oViewModel.setProperty("/sortDescending", true);
 
+            // 2. Reset columns to default 5 visible columns
+            var oDefaultCols = JSON.parse(JSON.stringify(DEFAULT_COLUMNS));
+            oViewModel.setProperty("/columns", oDefaultCols);
+
+            // 3. Reset temporary viewSettingsModel
+            var oViewSettingsModel = oView.getModel("viewSettingsModel");
+            if (oViewSettingsModel) {
+                oViewSettingsModel.setData(JSON.parse(JSON.stringify(DEFAULT_COLUMNS)));
+            }
+
+            // 4. Reset SearchField input UI
             var oSearchField = this.byId("searchField");
             if (oSearchField) {
                 oSearchField.setValue("");
             }
 
+            // 5. Reset IconTabBar UI and visual tab selection
             var oTabBar = this.byId("iconTabBar");
+            var oTabAll = this.byId("tabAll");
             if (oTabBar) {
                 oTabBar.setSelectedKey("all");
+                if (oTabAll && typeof oTabBar.setSelectedItem === "function") {
+                    oTabBar.setSelectedItem(oTabAll);
+                }
             }
 
+            // 6. Reset ViewSettingsDialog control (clear category filter items & reset sort item)
+            if (this._pViewSettingsDialog) {
+                this._pViewSettingsDialog.then(function (oDialog) {
+                    if (oDialog) {
+                        if (typeof oDialog.clearFilters === "function") {
+                            oDialog.clearFilters();
+                        }
+                        var aSortItems = typeof oDialog.getSortItems === "function" ? oDialog.getSortItems() : [];
+                        if (aSortItems && aSortItems.length > 0) {
+                            oDialog.setSelectedSortItem(aSortItems[0]);
+                        }
+                        if (typeof oDialog.setSortDescending === "function") {
+                            oDialog.setSortDescending(true);
+                        }
+                    }
+                });
+            }
+
+            // 7. Apply cleared filters, sort and refresh table binding
             this._applyFiltersAndSorting();
             MessageToast.show(oBundle.getText("msgFilterReset"));
         },
