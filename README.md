@@ -32,7 +32,7 @@ CodeUp-CaseStudy/
 │   ├── approval-service.js   # Onay, ret, BTP Gemini AI analiz iş mantığı
 │   └── server.js             # CAP Sunucu önyükleme ve hibrit bootstrapping
 │
-├── docs/                     # 📚 Proje Dokümantasyon ve Tasarım Kılavuzları
+├── Documents/                # 📚 Proje Dokümantasyon ve Tasarım Kılavuzları
 │   ├── architecture.md       # Ayrıntılı mimari tasarım dokümanı
 │   ├── BTP_SECURITY_GUIDE.md # BTP XSUAA, Destination ve güvenlik rehberi
 │   ├── design-system.md      # UI5 Horizon tasarım kuralları
