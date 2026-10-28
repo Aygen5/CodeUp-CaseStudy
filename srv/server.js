@@ -3,13 +3,12 @@ const path = require('path');
 const express = require('express');
 
 cds.on('bootstrap', (app) => {
-  // Static route mapping for UI5 applications during local CAP execution (Port 5001)
+  // Yerel çalıştırmada UI5 uygulamaları için statik dosya yolları
   app.use('/supplierportal', express.static(path.join(__dirname, '..', 'app', 'supplierportal', 'webapp')));
   app.use('/supplier-approvals', express.static(path.join(__dirname, '..', 'app', 'supplier-approvals', 'webapp')));
 
-  // Public OData v4 endpoints: Safeguard against XSUAA JWT validation conflicts.
-  // If an external supplier sends their custom token in the Authorization header,
-  // map it to X-Supplier-Token and remove Authorization so XSUAA does not reject it with 401.
+  // Tedarikçi token'ı Authorization başlığındaysa XSUAA 401 hatası vermesin diye
+  // token'ı x-supplier-token başlığına taşır ve Authorization başlığını siler.
   app.use('/odata/v4/public', (req, res, next) => {
     const authHeader = req.headers['authorization'] || req.headers['Authorization'];
     if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
