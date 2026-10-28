@@ -1,5 +1,6 @@
-const cds = require('@sap/cds');
+const cds = require('@sap/cds'); // Gerekli SAP CAP kütüphanesi
 
+// Gelen Türkçe/İngilizce farklı alan adlarını veritabanındaki standart kolon adlarına eşitler
 const FIELD_MAP = {
   'şirket adı': 'companyName',
   'sirket adi': 'companyName',
@@ -28,6 +29,7 @@ const FIELD_MAP = {
   'certificate': 'certificate'
 };
 
+// Reddedilen bir başvuruda tedarikçinin HANGİ alanları değiştirebileceğinin (izin verilenlerin) listesi
 const VALID_EDITABLE_FIELDS = new Set([
   'companyName',
   'contactPerson',
@@ -41,6 +43,8 @@ const VALID_EDITABLE_FIELDS = new Set([
   'certificate'
 ]);
 
+
+// Sisteme giriş yapılmış mı ve kullanıcının "Approval"yetkisi var mı diye bakar. Yoksa işlemi keser (HTTP 401/403).
 function checkApprovalRole(req) {
   if (!req.user || req.user._is_anonymous) {
     return req.reject(401, 'Yetkisiz erişim. Lütfen giriş yapınız.');
@@ -50,7 +54,7 @@ function checkApprovalRole(req) {
   }
 }
 
-async function handleApprove(submissionId, req) {
+async function handleApprove(submissionId, req) {  // Başvuruyu ONAYLAMA (Approve) İşlemi
   checkApprovalRole(req);
 
   if (!submissionId) {
@@ -63,22 +67,23 @@ async function handleApprove(submissionId, req) {
     return req.reject(404, 'Başvuru bulunamadı.');
   }
 
-  if (submission.status === 'Approved') {
+  const currentStatus = submission.status || submission.STATUS;
+  if (currentStatus === 'Approved') {
     return req.reject(400, 'Başvuru zaten onaylanmış durumdadır.');
   }
 
-  if (submission.status === 'Rejected') {
+  if (currentStatus === 'Rejected') {
     return req.reject(400, 'Reddedilmiş bir başvuru doğrudan onaylanamaz. Tedarikçinin gerekli düzeltmeleri yaparak tekrar başvurması beklenmelidir.');
   }
 
-  await UPDATE(Submissions)
+  await UPDATE(Submissions)  // Başvurunun durumunu 'Approved' yap ve düzenlenebilir alanları temizle (artık bitti)
     .set({
       status: 'Approved',
       editableFields: null
     })
     .where({ ID: submissionId });
 
-  const ApprovalSubmissions = 'codeup.supplier.management.ApprovalService.Submissions';
+  const ApprovalSubmissions = 'codeup.supplier.management.ApprovalService.Submissions';  // Güncellenmiş kaydı geri döndür
   const updated = await SELECT.one.from(ApprovalSubmissions).where({ ID: submissionId });
   return updated || (await SELECT.one.from(Submissions).where({ ID: submissionId }));
 }
@@ -96,19 +101,20 @@ async function handleReject(submissionId, rejectionReason, editableFields, req) 
     return req.reject(404, 'Başvuru bulunamadı.');
   }
 
-  if (submission.status === 'Approved') {
+  const rejectStatus = submission.status || submission.STATUS;
+  if (rejectStatus === 'Approved') {
     return req.reject(400, 'Onaylanmış bir başvuru reddedilemez.');
   }
 
-  if (!rejectionReason || typeof rejectionReason !== 'string' || !rejectionReason.trim()) {
+  if (!rejectionReason || typeof rejectionReason !== 'string' || !rejectionReason.trim()) {  // Red sebebi mutlaka girilmek zorundadır
     return req.reject(400, 'Red gerekçesi (karar notu) zorunludur.');
   }
 
-  if (!editableFields) {
+  if (!editableFields) {   // Tedarikçinin hangi alanları düzeltmesi gerektiği mutlaka seçilmelidir
     return req.reject(400, 'En az bir düzenlenebilir alan seçilmelidir.');
   }
 
-  let fieldsArray = [];
+  let fieldsArray = [];   // Gelen 'editableFields' verisini düzgün bir diziye (array) çevir
   if (Array.isArray(editableFields)) {
     fieldsArray = editableFields;
   } else if (typeof editableFields === 'string') {
@@ -121,7 +127,7 @@ async function handleReject(submissionId, rejectionReason, editableFields, req) 
     return req.reject(400, 'En az bir düzenlenebilir alan seçilmelidir.');
   }
 
-  const normalizedList = [];
+  const normalizedList = [];   // Seçilen alanların geçerli alanlar (VALID_EDITABLE_FIELDS) listesinde olup olmadığını kontrol et
   for (const rawField of fieldsArray) {
     const key = rawField.toLowerCase();
     const mapped = FIELD_MAP[key] || rawField;
@@ -135,7 +141,7 @@ async function handleReject(submissionId, rejectionReason, editableFields, req) 
 
   const normalizedStr = normalizedList.join(',');
 
-  await UPDATE(Submissions)
+  await UPDATE(Submissions)   // Başvurunun durumunu 'Rejected', sebebini ve değiştirilecek alanları veritabanına kaydet
     .set({
       status: 'Rejected',
       rejectionReason: rejectionReason.trim(),
@@ -148,6 +154,9 @@ async function handleReject(submissionId, rejectionReason, editableFields, req) 
   return updated || (await SELECT.one.from(Submissions).where({ ID: submissionId }));
 }
 
+
+// YAPAY ZEKA (GEMİNİ) ENTEGRASYONU
+// Gemini AI'a gidecek olan "İstem" (Prompt). Sisteme ne yapması gerektiğini söylüyoruz.
 function buildGeminiPrompt(currentDate = new Date().toISOString().split('T')[0]) {
   return `Bugünün tarihi: ${currentDate}. Sen kurumsal bir tedarikçi sertifikası denetleme uzmanısın. Ekli PDF sertifika belgesini dikkatle incele.
 
@@ -174,12 +183,13 @@ Kesinlikle aşağıdaki JSON formatında yanıt ver, başka hiçbir metin veya m
 }`;
 }
 
+// Yapay zekadan dönen ham metni (JSON) uygulamanın anlayacağı düzgün bir objeye dönüştürür
 function parseGeminiResponse(rawText, fileName) {
   if (!rawText || typeof rawText !== 'string') {
     throw new Error('AI servisinden boş yanıt alındı.');
   }
 
-  let clean = rawText.trim();
+  let clean = rawText.trim();  // Markdown formatında (```json) dönmüşse temizle
   if (clean.startsWith('```')) {
     clean = clean.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
   }
@@ -210,14 +220,14 @@ function parseGeminiResponse(rawText, fileName) {
   };
 }
 
-async function handleAnalyzeCertificate(submissionId, req) {
+async function handleAnalyzeCertificate(submissionId, req) {  // Veritabanındaki belgeyi alır ve Gemini yapay zekasına incelenmek üzere gönderir
   checkApprovalRole(req);
 
   if (!submissionId) {
     return req.reject(400, 'Geçerli bir başvuru ID si belirtilmelidir.');
   }
 
-  const Submissions = 'codeup.supplier.management.Submissions';
+  const Submissions = 'codeup.supplier.management.Submissions';   // Başvuru kaydını sertifika (PDF) ile birlikte veritabanından çek
   const submission = await SELECT.one
     .from(Submissions)
     .columns('*', 'certificate')
@@ -227,37 +237,41 @@ async function handleAnalyzeCertificate(submissionId, req) {
     return req.reject(404, 'Başvuru bulunamadı.');
   }
 
-  if (!submission.certificate) {
+  const certRaw = submission.certificate || submission.CERTIFICATE;
+  const certMimeType = submission.certificateMimeType || submission.CERTIFICATEMIMETYPE;
+  const certFileName = submission.certificateFileName || submission.CERTIFICATEFILENAME;
+
+  if (!certRaw) {
     return req.reject(400, 'Bu başvuruya ait bir sertifika dosyası bulunmamaktadır.');
   }
 
-  if (submission.certificateMimeType && submission.certificateMimeType !== 'application/pdf') {
+  if (certMimeType && certMimeType !== 'application/pdf') {
     return req.reject(400, 'Yalnızca PDF formatındaki sertifikalar analiz edilebilir.');
   }
 
-  let certBuffer;
-  if (Buffer.isBuffer(submission.certificate)) {
-    certBuffer = submission.certificate;
-  } else if (typeof submission.certificate[Symbol.asyncIterator] === 'function') {
+  let certBuffer;   // Veritabanından gelen veriyi Buffer formatına güvenli bir şekilde dönüştür (farklı DB türleri için fallback)
+  if (Buffer.isBuffer(certRaw)) {
+    certBuffer = certRaw;
+  } else if (typeof certRaw[Symbol.asyncIterator] === 'function') {
     const chunks = [];
-    for await (const chunk of submission.certificate) {
+    for await (const chunk of certRaw) {
       chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
     }
     certBuffer = Buffer.concat(chunks);
-  } else if (typeof submission.certificate.on === 'function') {
+  } else if (typeof certRaw.on === 'function') {
     certBuffer = await new Promise((resolve, reject) => {
       const chunks = [];
-      submission.certificate.on('data', chunk => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
-      submission.certificate.on('end', () => resolve(Buffer.concat(chunks)));
-      submission.certificate.on('error', reject);
+      certRaw.on('data', chunk => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+      certRaw.on('end', () => resolve(Buffer.concat(chunks)));
+      certRaw.on('error', reject);
     });
-  } else if (typeof submission.certificate === 'string') {
-    certBuffer = Buffer.from(submission.certificate, 'base64');
+  } else if (typeof certRaw === 'string') {
+    certBuffer = Buffer.from(certRaw, 'base64');
     if (certBuffer.length === 0) {
-      certBuffer = Buffer.from(submission.certificate);
+      certBuffer = Buffer.from(certRaw);
     }
   } else {
-    certBuffer = Buffer.from(submission.certificate);
+    certBuffer = Buffer.from(certRaw);
   }
 
   if (!certBuffer || certBuffer.length === 0) {
@@ -267,7 +281,7 @@ async function handleAnalyzeCertificate(submissionId, req) {
   const base64Data = certBuffer.toString('base64');
   const prompt = buildGeminiPrompt();
 
-  const geminiPayload = {
+  const geminiPayload = {   // Gemini'ye gönderilecek JSON Payload (yük) formatı
     contents: [
       {
         parts: [
@@ -287,7 +301,7 @@ async function handleAnalyzeCertificate(submissionId, req) {
     }
   };
 
-  let geminiService;
+  let geminiService;   // SAP BTP üzerindeki "gemini" isimli Destination'a bağlan (BTP Cockpit'te tanımlı olması gerekir)
   try {
     geminiService = await cds.connect.to('gemini');
   } catch (connectErr) {
@@ -298,7 +312,7 @@ async function handleAnalyzeCertificate(submissionId, req) {
   }
 
   try {
-    const result = typeof geminiService.post === 'function'
+    const result = typeof geminiService.post === 'function'  // Gemini AI servisine HTTP POST isteği gönder (Model: gemini-3.5-flash-lite)
       ? await geminiService.post('/models/gemini-3.5-flash-lite:generateContent', geminiPayload)
       : await geminiService.send({
           method: 'POST',
@@ -309,11 +323,11 @@ async function handleAnalyzeCertificate(submissionId, req) {
           }
         });
 
-    const rawText =
+    const rawText =   // AI'dan gelen sonucu yakala ve çözümle
       result?.candidates?.[0]?.content?.parts?.[0]?.text ||
       (typeof result === 'string' ? result : JSON.stringify(result));
 
-    const report = parseGeminiResponse(rawText, submission.certificateFileName);
+    const report = parseGeminiResponse(rawText, certFileName);
 
     // HUMAN-IN-THE-LOOP PRINCIPLE:
     // The submission status in the database is NEVER modified by AI analysis.
@@ -330,9 +344,11 @@ async function handleAnalyzeCertificate(submissionId, req) {
   }
 }
 
+
+//ANA SERVİS TANIMLAMALARI (ENDPOINTS)
 class ApprovalService extends cds.ApplicationService {
   async init() {
-    // In local development with SQLite, ensure view exists so native OData V4 filtering/search works
+    //Lokal testler için (SQLite) arama/filtrelemenin çalışmasını sağlayan bir veritabanı görünümü (View) oluşturuluyor.
     if (cds.db?.kind === 'sqlite') {
       try {
         await cds.db.run(`
@@ -365,22 +381,22 @@ class ApprovalService extends cds.ApplicationService {
       }
     }
 
-    this.before('*', async (req) => {
+    this.before('*', async (req) => {    //her işlemden önce "Bu kişi Onaylayıcı mı?" kontrolü (this.before)
       checkApprovalRole(req);
     });
-
+    // Fonksiyonları, dışarıdan çağrılabilen Endpoint'lere (API uç noktaları) bağlama işlemi
     this.on('approve', 'Submissions', async (req) => {
       const submissionId = req.params?.[0]?.ID || req.params?.[0] || req.data?.ID;
       return handleApprove(submissionId, req);
     });
 
     this.on('approveSubmission', async (req) => {
-      const submissionId = req.data?.ID;
+      const submissionId = req.data?.ID; //Unbound Action  ID'yi paketten (Body'den) al
       return handleApprove(submissionId, req);
     });
 
     this.on('reject', 'Submissions', async (req) => {
-      const submissionId = req.params?.[0]?.ID || req.params?.[0] || req.data?.ID;
+      const submissionId = req.params?.[0]?.ID || req.params?.[0] || req.data?.ID;  //Bound Action ID'yi URL'den (Linkten) al
       const { rejectionReason, editableFields } = req.data;
       return handleReject(submissionId, rejectionReason, editableFields, req);
     });

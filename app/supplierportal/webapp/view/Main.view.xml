@@ -22,7 +22,7 @@
 
         <content>
             <VBox class="sapUiResponsiveMargin">
-                <!-- Welcome Section -->
+                <!-- Karşılama Bölümü -->
                 <Panel
                     accessibleRole="Region"
                     backgroundDesign="Translucent"
@@ -49,7 +49,7 @@
                     </VBox>
                 </Panel>
 
-                <!-- Architecture Capabilities Overview -->
+                <!-- Sistem Yetkinlikleri ve Özellikler -->
                 <Panel
                     accessibleRole="Region"
                     backgroundDesign="Transparent"
@@ -62,7 +62,7 @@
                     <layout:Grid
                         defaultSpan="XL4 L4 M4 S12"
                         class="sapUiNoContentPadding">
-                        <!-- Capability 1 -->
+                        <!-- Özellik 1: Şirket Bilgileri -->
                         <f:Card class="sapUiTinyMargin">
                             <f:header>
                                 <card:Header
@@ -72,7 +72,7 @@
                             </f:header>
                         </f:Card>
 
-                        <!-- Capability 2 -->
+                        <!-- Özellik 2: Belge Doğrulama -->
                         <f:Card class="sapUiTinyMargin">
                             <f:header>
                                 <card:Header
@@ -82,7 +82,7 @@
                             </f:header>
                         </f:Card>
 
-                        <!-- Capability 3 -->
+                        <!-- Özellik 3: Süreç Takibi -->
                         <f:Card class="sapUiTinyMargin">
                             <f:header>
                                 <card:Header

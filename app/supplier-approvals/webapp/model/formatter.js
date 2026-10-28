@@ -9,11 +9,7 @@
     "use strict";
 
     return {
-        /**
-         * Maps submission status to SAPUI5 semantic ValueState/ObjectStatus state.
-         * @param {string} sStatus Status key (Pending, InReview, Approved, Rejected)
-         * @returns {string} ValueState (Warning, Information, Success, Error, None)
-         */
+        // Duruma göre semantik renk durumunu (Success, Error vb.) belirler
         formatStatusState: function (sStatus) {
             switch (sStatus) {
                 case "Approved":
@@ -29,11 +25,7 @@
             }
         },
 
-        /**
-         * Maps submission status to SAPUI5 icon URI.
-         * @param {string} sStatus Status key
-         * @returns {string} Icon URI
-         */
+        // Duruma uygun SAP ikonunu döner
         formatStatusIcon: function (sStatus) {
             switch (sStatus) {
                 case "Approved":
@@ -49,11 +41,7 @@
             }
         },
 
-        /**
-         * Formats ISO date string to readable localized date and time.
-         * @param {string} sDate ISO date string
-         * @returns {string} Localized date string
-         */
+        // ISO tarihini okunabilir tarih/saat formatına çevirir
         formatDateTime: function (sDate) {
             if (!sDate) {
                 return "";

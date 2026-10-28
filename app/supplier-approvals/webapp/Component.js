@@ -10,27 +10,14 @@ sap.ui.define([
             manifest: "json"
         },
 
-        /**
-         * Component initialization called automatically by UI5 on startup.
-         * @public
-         * @override
-         */
+        // Bileşen başlangıcı: Temel init, cihaz modeli ve router başlatılır
         init: function () {
-            // Call base component init
             UIComponent.prototype.init.apply(this, arguments);
-
-            // Set device model
             this.setModel(models.createDeviceModel(), "device");
-
-            // Enable routing
             this.getRouter().initialize();
         },
 
-        /**
-         * Returns the content density class based on device touch support
-         * @public
-         * @returns {string} CSS class name
-         */
+        // Dokunmatik desteğine göre CSS density sınıfını (Compact/Cozy) döner
         getContentDensityClass: function () {
             if (!this._sContentDensityClass) {
                 if (!Device.support.touch) {

@@ -6,8 +6,8 @@ sap.ui.define([
   "use strict";
 
   var THEME_STORAGE_KEY = "codeup_supplier_portal_theme";
-  var THEME_DARK = "sap_horizon_dark";   // Evening Horizon
-  var THEME_LIGHT = "sap_horizon";       // Morning Horizon
+  var THEME_DARK = "sap_horizon_dark";   // Koyu tema
+  var THEME_LIGHT = "sap_horizon";       // Açık tema
 
   var ThemeManager = BaseObject.extend("codeup.supplier.portal.model.ThemeManager", {
     constructor: function () {

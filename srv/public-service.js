@@ -1,3 +1,4 @@
+// Gerekli kütüphaneler ve çevre değişkenlerinin (sabitlerin) tanımlanması
 const cds = require('@sap/cds');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
@@ -5,7 +6,9 @@ const crypto = require('crypto');
 const JWT_SECRET = process.env.SUPPLIER_JWT_SECRET || 'codeup-supplier-jwt-secret-key-btp-2026';
 const MAX_CERTIFICATE_SIZE = 10 * 1024 * 1024; // 10 MB
 
-function base64UrlEncode(str) {
+
+// Base64 formatına çevirme ve geri çözme fonksiyonları (Token işlemleri için gereklidir)
+function base64UrlEncode(str) {  
   return Buffer.from(str)
     .toString('base64')
     .replace(/=/g, '')
@@ -19,8 +22,9 @@ function base64UrlDecode(str) {
   return Buffer.from(str, 'base64').toString('utf8');
 }
 
+// Supplier (Tedarikçi) için JWT oluşturur. Login ve Register başarılı olduğunda çağrılır.
 function generateSupplierToken({ supplierId, email }) {
-  const header = base64UrlEncode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+  const header = base64UrlEncode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));  //şifreleme algoritmasını (HS256) belirler ve bunu Base64 formatına çevirir.
   const now = Math.floor(Date.now() / 1000);
   const payload = base64UrlEncode(JSON.stringify({
     supplierId,
@@ -35,7 +39,7 @@ function generateSupplierToken({ supplierId, email }) {
     .replace(/=/g, '')
     .replace(/\+/g, '-')
     .replace(/\//g, '_');
-  return `${header}.${payload}.${signature}`;
+  return `${header}.${payload}.${signature}`;  // uzun JWT string ifadesini oluşturulur.
 }
 
 function verifySupplierToken(token) {
@@ -56,7 +60,7 @@ function verifySupplierToken(token) {
   if (header.alg !== 'HS256') {
     throw new Error('Desteklenmeyen imza algoritması.');
   }
-  const expectedSig = crypto
+  const expectedSig = crypto   // İmzayı kontrol et
     .createHmac('sha256', JWT_SECRET)
     .update(`${headerB64}.${payloadB64}`)
     .digest('base64')
@@ -69,7 +73,7 @@ function verifySupplierToken(token) {
   if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
     throw new Error('Geçersiz belirteç imzası.');
   }
-  let payload;
+  let payload;   // Yük (Payload) ve süre (Expiration) kontrolü
   try {
     payload = JSON.parse(base64UrlDecode(payloadB64));
   } catch {
@@ -82,6 +86,7 @@ function verifySupplierToken(token) {
   return payload;
 }
 
+// Şifrenin güvenliğini (uzunluk, büyük/küçük harf, rakam, özel karakter) test eder
 function validatePassword(password) {
   if (!password || typeof password !== 'string') {
     return { valid: false, message: 'Şifre zorunludur.' };
@@ -104,12 +109,14 @@ function validatePassword(password) {
   return { valid: true };
 }
 
+// E-posta formatının doğruluğunu Regex ile kontrol eder
 function validateEmail(email) {
   if (!email || typeof email !== 'string') return false;
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email.trim());
 }
 
+// Yüklenen sertifika dosyasını Buffer formatına çevirir
 function parseCertificateBuffer(certificate) {
   if (!certificate) return null;
   if (Buffer.isBuffer(certificate)) {
@@ -125,6 +132,7 @@ function parseCertificateBuffer(certificate) {
   return null;
 }
 
+// Sertifikanın boyutunu ve PDF formatında olup olmadığını (Magic Bytes ile) doğrular
 function validateCertificate(certificate, fileName) {
   const buf = parseCertificateBuffer(certificate);
   if (!buf || buf.length === 0) {
@@ -148,6 +156,8 @@ function validateCertificate(certificate, fileName) {
   return { valid: true, buffer: buf };
 }
 
+
+// HTTP isteklerinin içinden (Header veya Cookie) Token'ı bulup çıkarır
 function extractSupplierToken(req) {
   const headers = req.headers || req._?.req?.headers || {};
   const authHeader = headers['authorization'] || headers['Authorization'];
@@ -169,6 +179,7 @@ function extractSupplierToken(req) {
   return null;
 }
 
+// Eğer istek yapan kişi giriş yapmamışsa (token yoksa/geçersizse) işlemi reddeder (401 fırlatır)
 function requireSupplier(req) {
   if (!req.supplier || !req.supplier.id) {
     const reason = req.supplierAuthError ? ` (${req.supplierAuthError})` : '';
@@ -177,6 +188,7 @@ function requireSupplier(req) {
   return req.supplier;
 }
 
+// Türkçe / İngilizce farklı yazılan tablo kolonlarını veritabanı alan adlarına eşitler
 const FIELD_MAP = {
   'şirket adı': 'companyName',
   'sirket adi': 'companyName',
@@ -205,16 +217,18 @@ const FIELD_MAP = {
   'certificate': 'certificate'
 };
 
+
 class PublicService extends cds.ApplicationService {
   async init() {
     const Suppliers = 'codeup.supplier.management.Suppliers';
     const Submissions = 'codeup.supplier.management.Submissions';
 
+    // Bütün API isteklerinden (endpoint) ÖNCE çalışır. Token varsa çözer ve req.supplier nesnesini doldurur.
     this.before('*', async (req) => {
-      const token = extractSupplierToken(req);
+      const token = extractSupplierToken(req);  //token string ifadesini cımbızla çeker.
       if (token) {
         try {
-          const payload = verifySupplierToken(token);
+          const payload = verifySupplierToken(token);  //Fonksiyon gizli anahtarla (JWT_SECRET) imzayı kontrol eder. Süresi geçmiş mi (exp < now) diye bakar. Her şey doğruysa token çözülür ve kullanıcının kimliği req.supplier nesnesine eşitlenir.
           req.supplier = {
             id: payload.supplierId,
             email: payload.email
@@ -225,8 +239,10 @@ class PublicService extends cds.ApplicationService {
       }
     });
 
+    // --- TEDARİKÇİ KAYIT OLMA (REGISTER) İŞLEMİ ---
     this.on('register', async (req) => {
       const { email, password } = req.data;
+      // E-posta ve şifre formatlarını kontrol et
       if (!email || !validateEmail(email)) {
         return req.reject(400, 'Geçerli bir e-posta adresi giriniz.');
       }
@@ -235,11 +251,11 @@ class PublicService extends cds.ApplicationService {
         return req.reject(400, pwdCheck.message);
       }
       const cleanEmail = email.toLowerCase().trim();
-      const existing = await SELECT.one.from(Suppliers).where({ email: cleanEmail });
+      const existing = await SELECT.one.from(Suppliers).where({ email: cleanEmail }); // Sistemde aynı e-posta var mı?
       if (existing) {
         return req.reject(400, 'Bu e-posta adresi ile kayıtlı bir tedarikçi zaten mevcut.');
       }
-
+      // Şifreyi bcrypt ile şifrele (hash) ve veritabanına yeni kayıt at
       const salt = await bcrypt.genSalt(10);
       const passwordHash = await bcrypt.hash(password, salt);
       const newSupplier = {
@@ -250,7 +266,7 @@ class PublicService extends cds.ApplicationService {
       };
 
       await INSERT.into(Suppliers).entries(newSupplier);
-
+      // Kayıt başarılıysa anında oturum açması için token üretip döndür
       const token = generateSupplierToken({ supplierId: newSupplier.ID, email: newSupplier.email });
       return {
         success: true,
@@ -261,13 +277,14 @@ class PublicService extends cds.ApplicationService {
       };
     });
 
+    // --- TEDARİKÇİ GİRİŞ YAPMA (LOGIN) İŞLEMİ ---
     this.on('login', async (req) => {
       const { email, password } = req.data;
       if (!email || !password) {
         return req.reject(400, 'E-posta ve şifre zorunludur.');
       }
       const cleanEmail = email.toLowerCase().trim();
-      const supplier = await SELECT.one.from(Suppliers).where({ email: cleanEmail });
+      const supplier = await SELECT.one.from(Suppliers).where({ email: cleanEmail });  // Kullanıcı var mı ve şifre doğru mu kontrol et
       if (!supplier || !supplier.passwordHash) {
         return req.reject(401, 'Geçersiz e-posta veya şifre.');
       }
@@ -275,6 +292,7 @@ class PublicService extends cds.ApplicationService {
       if (!isMatch) {
         return req.reject(401, 'Geçersiz e-posta veya şifre.');
       }
+      // Şifre doğruysa Token üret ve döndür
       const token = generateSupplierToken({ supplierId: supplier.ID, email: supplier.email });
       return {
         success: true,
@@ -284,30 +302,33 @@ class PublicService extends cds.ApplicationService {
         email: supplier.email
       };
     });
-
+    
+    // --- TEDARİKÇİNİN KENDİ BAŞVURUSUNU GETİRMESİ ---
     this.on('getMySubmission', async (req) => {
       const supplier = requireSupplier(req);
       const submission = await SELECT.one.from(Submissions).where({ supplier_ID: supplier.id });
       return submission || null;
     });
 
+    // --- STANDART OKUMA İŞLEMİ (Sadece kendi verilerini görebilsin diye filtreleme) ---
     this.on('READ', 'Submissions', async (req) => {
-      const supplier = requireSupplier(req);
+      const supplier = requireSupplier(req); // Yetki kontrolü
       const query = SELECT.from('codeup.supplier.management.Submissions').where({ supplier_ID: supplier.id });
       return cds.db.run(query);
     });
 
+    // --- YENİ BAŞVURU OLUŞTURMA İŞLEMİ ---
     this.on('createSubmission', async (req) => {
       const supplier = requireSupplier(req);
 
-      const existing = await SELECT.one.from(Submissions).where({ supplier_ID: supplier.id });
+      const existing = await SELECT.one.from(Submissions).where({ supplier_ID: supplier.id });  // Zaten bir başvurusu varsa yenisini engelle
       if (existing) {
         return req.reject(400, 'Zaten bir başvurunuz bulunmaktadır. Başvuru durumunuzu takip edebilirsiniz.');
       }
 
       const { companyName, contactPerson, certificate, certificateFileName } = req.data;
-
-      if (!companyName || !companyName.trim()) {
+      
+      if (!companyName || !companyName.trim()) {   // Zorunlu alan kontrolleri
         return req.reject(400, 'Şirket adı zorunludur.');
       }
       if (!contactPerson || !contactPerson.trim()) {
@@ -317,7 +338,7 @@ class PublicService extends cds.ApplicationService {
         return req.reject(400, 'Sertifika belgesi zorunludur.');
       }
 
-      const certCheck = validateCertificate(certificate, certificateFileName);
+      const certCheck = validateCertificate(certificate, certificateFileName);  // Sertifikayı ve Kategori bilgisini kontrol et
       if (!certCheck.valid) {
         return req.reject(400, certCheck.message);
       }
@@ -326,7 +347,8 @@ class PublicService extends cds.ApplicationService {
       if (req.data.category && !validCategories.includes(req.data.category)) {
         return req.reject(400, 'Geçersiz kategori. İzin verilen kategoriler: ' + validCategories.join(', '));
       }
-
+      
+      // Yeni başvuruyu veritabanına ekle
       const newSubmission = {
         ID: cds.utils.uuid(),
         supplier_ID: supplier.id,
@@ -352,10 +374,12 @@ class PublicService extends cds.ApplicationService {
       return newSubmission;
     });
 
+
+    // --- REDDEDİLEN BAŞVURUYU GÜNCELLEYİP TEKRAR GÖNDERME ---
     this.on('reApplySubmission', async (req) => {
       const supplier = requireSupplier(req);
 
-      let submission;
+      let submission;  // Güncellenmek istenen başvuruyu bul ve aidiyetini kontrol et
       if (req.data.submissionId) {
         submission = await SELECT.one.from(Submissions).where({ ID: req.data.submissionId });
         if (!submission) {
@@ -371,11 +395,11 @@ class PublicService extends cds.ApplicationService {
         }
       }
 
-      if (submission.status !== 'Rejected') {
+      if (submission.status !== 'Rejected') {   // Sadece Rejected (Reddedilmiş) başvurular tekrar gönderilebilir
         return req.reject(400, `Yalnızca reddedilmiş başvurular için tekrar başvuru yapılabilir. Mevcut durum: ${submission.status}`);
       }
-
-      const allowedRaw = (submission.editableFields || '')
+     
+      const allowedRaw = (submission.editableFields || '')   // Sadece approvals tarafından belirlenen 'editableFields' (düzenlenebilir alanlar) güncellenebilir
         .split(',')
         .map(s => s.trim())
         .filter(Boolean);
@@ -403,7 +427,7 @@ class PublicService extends cds.ApplicationService {
 
       const updates = {};
 
-      for (const key of modifiableKeys) {
+      for (const key of modifiableKeys) {   // Gönderilen yeni verilerin değiştirilmesine izin verilmiş mi kontrol et
         if (key === 'certificate') {
           if (req.data.certificate !== undefined && req.data.certificate !== null) {
             if (!allowedFields.has('certificate')) {
@@ -424,7 +448,7 @@ class PublicService extends cds.ApplicationService {
             const normNew = (rawNew === '' || rawNew === null || rawNew === undefined) ? null : rawNew;
             const normOld = (rawOld === '' || rawOld === null || rawOld === undefined) ? null : rawOld;
 
-            if (normNew !== normOld) {
+            if (normNew !== normOld) {   // Veri değişmişse ve değiştirmeye izni varsa güncelle
               if (!allowedFields.has(key)) {
                 return req.reject(400, `'${key}' alanını düzenleme izniniz bulunmamaktadır. İzin verilen alanlar: ${submission.editableFields}`);
               }
@@ -438,7 +462,7 @@ class PublicService extends cds.ApplicationService {
         return req.reject(400, 'Lütfen izin verilen düzenlenebilir alanlarda en az bir güncelleme yapınız.');
       }
 
-      updates.status = 'InReview';
+      updates.status = 'InReview';   // Güncelleme yapıldıktan sonra durumu tekrar "InReview" (İncelemede) yap
       updates.submissionDate = new Date().toISOString();
       updates.rejectionReason = submission.rejectionReason;
       updates.editableFields = submission.editableFields;
@@ -453,6 +477,7 @@ class PublicService extends cds.ApplicationService {
   }
 }
 
+// Servisi ve test/başka modüller kullanabilsin diye yardımcı fonksiyonları dışa aktar
 PublicService.generateSupplierToken = generateSupplierToken;
 PublicService.verifySupplierToken = verifySupplierToken;
 PublicService.validatePassword = validatePassword;

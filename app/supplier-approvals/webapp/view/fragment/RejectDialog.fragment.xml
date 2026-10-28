@@ -52,7 +52,7 @@
                     </HBox>
                 </HBox>
 
-                <!-- Backend VALID_EDITABLE_FIELDS Whitelist ile %100 Uyumlu 10 Alan -->
+                <!-- Düzenlenebilir 10 alan listesi -->
                 <layout:Grid defaultSpan="XL6 L6 M6 S12" class="sapUiTinyMarginTop">
                     <CheckBox
                         id="chkFieldCertificate"

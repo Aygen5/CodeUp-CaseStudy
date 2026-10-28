@@ -5,7 +5,7 @@ sap.ui.define([
 
     return Controller.extend("codeup.supplier.approvals.controller.App", {
         onInit: function () {
-            // Apply compact or cozy content density based on device
+            // Cihaza göre içerik yoğunluğunu (compact/cozy) ayarlar
             var oOwnerComponent = this.getOwnerComponent();
             if (oOwnerComponent && oOwnerComponent.getContentDensityClass) {
                 this.getView().addStyleClass(oOwnerComponent.getContentDensityClass());

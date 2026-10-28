@@ -11,6 +11,7 @@ sap.ui.define([
       this._session = this._loadInitialSession();
     },
 
+    // Kaydedilmiş oturum bilgisini yükler
     _loadInitialSession: function () {
       try {
         var raw = window.sessionStorage.getItem(STORAGE_KEY) || window.localStorage.getItem(STORAGE_KEY);
@@ -21,11 +22,12 @@ sap.ui.define([
           }
         }
       } catch (e) {
-        // storage disabled or corrupt
+        // Depolama kapalı veya geçersiz veri
       }
       return null;
     },
 
+    // Oturum verisini ve token'ı saklar
     setSession: function (sessionData, bRememberMe) {
       if (!sessionData || !sessionData.token) {
         return;
@@ -46,7 +48,7 @@ sap.ui.define([
           window.localStorage.removeItem(STORAGE_KEY);
         }
       } catch (e) {
-        // Ignore storage exceptions in restricted environments
+        // Depolama istisnalarını yoksayar
       }
     },
 
@@ -66,20 +68,23 @@ sap.ui.define([
       return this._session ? this._session.email : null;
     },
 
+    // Kullanıcının oturum açıp açmadığını doğrular
     isAuthenticated: function () {
       return !!(this._session && this._session.token);
     },
 
+    // Oturum bilgisini ve depolamayı temizler
     clearSession: function () {
       this._session = null;
       try {
         window.sessionStorage.removeItem(STORAGE_KEY);
         window.localStorage.removeItem(STORAGE_KEY);
       } catch (e) {
-        // Ignore
+        // Hataları yoksayar
       }
     },
 
+    // İstekler için token başlığını döner
     getAuthHeaders: function () {
       var token = this.getToken();
       if (!token) {
@@ -91,7 +96,7 @@ sap.ui.define([
     }
   });
 
-  // Singleton instance
+  // Tekil (singleton) nesne döner
   var instance = new AuthManager();
   return instance;
 });

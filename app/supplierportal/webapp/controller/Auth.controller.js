@@ -7,6 +7,7 @@ sap.ui.define([
 ], function (Controller, JSONModel, MessageToast, AuthManager, ThemeManager) {
   "use strict";
 
+  // Tedarikçi genel (public) servis endpoint yolu
   var SERVICE_BASE = "/odata/v4/public";
 
   return Controller.extend("codeup.supplier.portal.controller.Auth", {
@@ -166,8 +167,8 @@ sap.ui.define([
 
     onQuickDemoFill: function () {
       var oModel = this.getView().getModel("authView");
-      oModel.setProperty("/email", "acme@industrial.de");
-      oModel.setProperty("/password", "SecurePassword123!");
+      oModel.setProperty("/email", "procurement@nexustech-hardware.de");
+      oModel.setProperty("/password", "Password123!");
       oModel.setProperty("/hasError", false);
       oModel.setProperty("/isRegister", false);
     },

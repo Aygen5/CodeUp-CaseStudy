@@ -1,6 +1,12 @@
-﻿const cds = require('@sap/cds');
+const cds = require('@sap/cds');
+const path = require('path');
+const express = require('express');
 
 cds.on('bootstrap', (app) => {
+  // Static route mapping for UI5 applications during local CAP execution (Port 5001)
+  app.use('/supplierportal', express.static(path.join(__dirname, '..', 'app', 'supplierportal', 'webapp')));
+  app.use('/supplier-approvals', express.static(path.join(__dirname, '..', 'app', 'supplier-approvals', 'webapp')));
+
   // Public OData v4 endpoints: Safeguard against XSUAA JWT validation conflicts.
   // If an external supplier sends their custom token in the Authorization header,
   // map it to X-Supplier-Token and remove Authorization so XSUAA does not reject it with 401.
@@ -18,3 +24,4 @@ cds.on('bootstrap', (app) => {
 });
 
 module.exports = cds.server;
+

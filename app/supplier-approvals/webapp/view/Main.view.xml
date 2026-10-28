@@ -21,7 +21,7 @@
 
         <content>
             <VBox class="sapUiResponsiveMargin">
-                <!-- Authorization Error Strip (Shown if backend returns 401/403) -->
+                <!-- Yetki hatası uyarısı (401/403 durumunda) -->
                 <MessageStrip
                     id="authErrorStrip"
                     text="{viewModel>/authErrorMessage}"
@@ -31,11 +31,11 @@
                     class="sapUiSmallMarginBottom"
                     visible="{viewModel>/hasAuthError}">
                     <link>
-                        <Link text="{i18n>btnLoginWithBtp}" href="/supplier-approvals/index.html" target="_self" />
+                        <Link text="{i18n>btnLoginWithBtp}" press=".onLoginWithBtpPress" />
                     </link>
                 </MessageStrip>
 
-                <!-- Status Tabs & Submissions Table Section -->
+                <!-- Durum sekmeleri ve başvuru tablosu -->
                 <IconTabBar
                     id="iconTabBar"
                     select=".onTabSelect"

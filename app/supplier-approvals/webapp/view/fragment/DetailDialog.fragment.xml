@@ -11,7 +11,7 @@
         stretch="{device>/system/phone}">
         <content>
             <VBox class="sapUiResponsiveMargin">
-                <!-- 1. Genel Bilgiler (General Information) -->
+                <!-- 1. Genel Bilgiler -->
                 <Panel
                     headerText="{i18n>detailSectionGeneral}"
                     expandable="false"
@@ -160,7 +160,7 @@
                             showCloseButton="false"
                             visible="{= !${detailModel>/hasPdf} }" />
 
-                        <!-- Inline PDF Viewer -->
+                        <!-- Gömülü PDF Önizleyici -->
                         <VBox id="pdfViewerContainer" visible="{detailModel>/showPdfPreview}" class="sapUiSmallMarginTop">
                             <PDFViewer
                                 id="pdfViewer"
@@ -173,7 +173,7 @@
                     </VBox>
                 </Panel>
 
-                <!-- 4. Gemini AI Karar Desteği (Human-in-the-Loop) -->
+                <!-- 4. Yapay Zeka (AI) Karar Desteği -->
                 <Panel
                     id="pnlAiReport"
                     headerText="{i18n>aiReportTitle}"
@@ -181,7 +181,7 @@
                     visible="{detailModel>/hasAiReport}"
                     class="sapUiSmallMarginBottom">
                     <VBox class="sapUiSmallMargin">
-                        <!-- Human-in-the-Loop Bilgilendirme Şeridi -->
+                        <!-- Bilgilendirme Şeridi -->
                         <MessageStrip
                             text="{i18n>aiHumanInTheLoopDisclaimer}"
                             type="Information"

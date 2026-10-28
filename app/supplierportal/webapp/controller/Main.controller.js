@@ -5,7 +5,7 @@ sap.ui.define([
 
     return Controller.extend("codeup.supplier.portal.controller.Main", {
         onInit: function () {
-            // Main controller initialization for Step 5.1
+            // Ana karşılama ekranı başlatma mantığı
         }
     });
 });

@@ -72,9 +72,8 @@
           showIcon="true"
           class="sapUiSmallMarginBottom" />
 
-        <!-- =================================================================== -->
-        <!-- DURUM 1: Mevcut Başvuru Durumu ve 3 Aşamalı ProcessFlow Akışı         -->
-        <!-- =================================================================== -->
+
+        <!-- DURUM 1: Mevcut Başvuru Durumu ve 3 Aşamalı ProcessFlow Akışı-->
         <f:Card
           id="existingSubmissionCard"
           width="100%"
@@ -183,9 +182,8 @@
           </f:content>
         </f:Card>
 
-        <!-- =================================================================== -->
-        <!-- DURUM 2: Korumalı Yeniden Başvuru Formu (Re-apply)                  -->
-        <!-- =================================================================== -->
+        <!-- DURUM 2: Korumalı Yeniden Başvuru Formu (Re-apply) -->
+   
         <f:Card
           id="reApplyCard"
           width="100%"
@@ -387,9 +385,9 @@
           </f:content>
         </f:Card>
 
-        <!-- =================================================================== -->
-        <!-- DURUM 3: İlk Başvuru Formu (Gruplandırılmış SimpleForm)             -->
-        <!-- =================================================================== -->
+ 
+        <!-- DURUM 3: İlk Başvuru Formu (Gruplandırılmış SimpleForm) -->
+     
         <f:Card
           id="newApplicationCard"
           width="100%"

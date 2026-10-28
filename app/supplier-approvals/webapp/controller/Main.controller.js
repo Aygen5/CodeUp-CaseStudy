@@ -117,22 +117,16 @@ sap.ui.define([
             });
             this.getView().setModel(oRejectModel, "rejectModel");
 
-            // Initial load of submissions directly from real CAP ApprovalService
+            // Başvuruları backend'den yükler
             this._loadSubmissions();
         },
 
-        /**
-         * Returns resource bundle for internationalization.
-         * @returns {sap.ui.model.resource.ResourceModel}
-         */
+        // i18n dil paketine erişir
         getResourceBundle: function () {
             return this.getOwnerComponent().getModel("i18n").getResourceBundle();
         },
 
-        /**
-         * Reads auth headers if provided in local development or test environment.
-         * @returns {Object} Headers map
-         */
+        // Test veya BTP auth başlıklarını döner
         _getAuthHeaders: function () {
             var oHeaders = {
                 "Accept": "application/json",
@@ -147,12 +141,7 @@ sap.ui.define([
             return oHeaders;
         },
 
-        /**
-         * Loads submissions from real CAP ApprovalService OData V4 endpoint.
-         * Handles 401/403 authorization responses gracefully without fake client-side checks.
-         * @param {boolean} [bShowToast=false] Whether to show success toast on refresh
-         * @returns {Promise<void>}
-         */
+        // Başvuruları OData V4 servisinden yükler; yetki kontrolü yapar
         _loadSubmissions: async function (bShowToast) {
             var oViewModel = this.getView().getModel("viewModel");
             var oSubmissionsModel = this.getView().getModel("submissions");
@@ -169,7 +158,7 @@ sap.ui.define([
 
                 var sContentType = (oResponse.headers.get("content-type") || "").toLowerCase();
 
-                // If session expired or Approuter returned OAuth2 login challenge redirect
+                // Oturum düşmüşse login uyarısı gösterir
                 if (oResponse.status === 401 || (oResponse.ok && sContentType.includes("text/html"))) {
                     oViewModel.setProperty("/hasAuthError", true);
                     oViewModel.setProperty("/authErrorMessage", oBundle.getText("msgAuthRequired"));
@@ -208,10 +197,17 @@ sap.ui.define([
             }
         },
 
-        /**
-         * Calculates tab counts from actual backend records.
-         * @param {Array} aItems Array of submission entities from backend
-         */
+        // BTP Approuter login sayfasına yönlendirir
+        onLoginWithBtpPress: function () {
+            var sPort = window.location.port;
+            if (sPort === "5001") {
+                window.location.href = "http://" + window.location.hostname + ":5000/supplier-approvals/index.html";
+            } else {
+                window.location.href = "/supplier-approvals/index.html";
+            }
+        },
+
+        // Başvuruları statülerine göre sayar
         _updateCounts: function (aItems) {
             var oViewModel = this.getView().getModel("viewModel");
             var aList = aItems || [];
@@ -227,9 +223,7 @@ sap.ui.define([
             oViewModel.setProperty("/counts/rejected", iRejected);
         },
 
-        /**
-         * Applies active tab status, search query, category filters and sorting.
-         */
+        // Tabloya sekme, kategori, arama ve sıralama filtrelerini uygular
         _applyFiltersAndSorting: function () {
             var oTable = this.byId("submissionsTable");
             if (!oTable) {
@@ -249,17 +243,17 @@ sap.ui.define([
 
             var aFilters = [];
 
-            // 1. Status Filter (from IconTabBar)
+            // 1. Durum filtresi (IconTabBar)
             if (sSelectedTab && sSelectedTab !== "all") {
                 aFilters.push(new Filter("status", FilterOperator.EQ, sSelectedTab));
             }
 
-            // 2. Category Filter (from ViewSettingsDialog)
+            // 2. Kategori filtresi
             if (sSelectedCategory) {
                 aFilters.push(new Filter("category", FilterOperator.EQ, sSelectedCategory));
             }
 
-            // 3. Search Query Filter (matches @cds.search fields: companyName, contactPerson, supplierEmail, notes, taxId)
+            // 3. Çok alanlı metin arama filtresi
             if (sSearchQuery && sSearchQuery.trim().length > 0) {
                 var sCleanQuery = sSearchQuery.trim();
                 var aSearchFilters = [
@@ -275,7 +269,7 @@ sap.ui.define([
                 }));
             }
 
-            // Combine all filter groups with AND
+            // Filtreleri AND ile birleştirir
             if (aFilters.length === 0) {
                 oBinding.filter([]);
             } else if (aFilters.length === 1) {
@@ -284,16 +278,13 @@ sap.ui.define([
                 oBinding.filter(new Filter({ filters: aFilters, and: true }));
             }
 
-            // Sorter
+            // Sıralama uygular
             oBinding.sort(new Sorter(sSortField, bSortDescending));
 
             oViewModel.setProperty("/filteredCount", oBinding.getLength());
         },
 
-        /**
-         * Handler for IconTabBar tab selection.
-         * @param {sap.ui.base.Event} oEvent
-         */
+        // Sekme seçildiğinde filtreleri günceller
         onTabSelect: function (oEvent) {
             var sKey = oEvent.getParameter("key");
             var oViewModel = this.getView().getModel("viewModel");
@@ -301,10 +292,7 @@ sap.ui.define([
             this._applyFiltersAndSorting();
         },
 
-        /**
-         * Handler for SearchField search and liveChange.
-         * @param {sap.ui.base.Event} oEvent
-         */
+        // Arama kutusuna yazıldığında filtreleri günceller
         onSearch: function (oEvent) {
             var sQuery = oEvent.getParameter("query");
             if (sQuery === undefined) {
@@ -315,14 +303,11 @@ sap.ui.define([
             this._applyFiltersAndSorting();
         },
 
-        /**
-         * Opens ViewSettingsDialog fragment for column visibility, sorting and category filtering.
-         */
+        // Sütun, sıralama ve kategori ayar diyaloğunu açar
         onOpenViewSettings: function () {
             var oView = this.getView();
             var oViewModel = oView.getModel("viewModel");
             
-            // Create a copy of the columns state for the dialog
             var oColumnsCopy = JSON.parse(JSON.stringify(oViewModel.getProperty("/columns")));
             
             var oViewSettingsModel = oView.getModel("viewSettingsModel");
@@ -348,28 +333,22 @@ sap.ui.define([
             });
         },
 
-        /**
-         * Confirms ViewSettingsDialog selections.
-         * @param {sap.ui.base.Event} oEvent
-         */
+        // Seçilen sütun, sıralama ve kategori ayarlarını uygular
         onConfirmViewSettings: function (oEvent) {
             var oView = this.getView();
             var oViewModel = oView.getModel("viewModel");
             var oViewSettingsModel = oView.getModel("viewSettingsModel");
             var mParams = oEvent.getParameters();
 
-            // Apply column visibility changes from temporary model to main model
             if (oViewSettingsModel) {
                 oViewModel.setProperty("/columns", oViewSettingsModel.getData());
             }
 
-            // Sorter settings
             if (mParams.sortItem) {
                 oViewModel.setProperty("/sortField", mParams.sortItem.getKey());
             }
             oViewModel.setProperty("/sortDescending", mParams.sortDescending);
 
-            // Filter settings (category)
             var sSelectedCategory = "";
             if (mParams.filterItems && mParams.filterItems.length > 0) {
                 sSelectedCategory = mParams.filterItems[0].getKey();
@@ -379,9 +358,7 @@ sap.ui.define([
             this._applyFiltersAndSorting();
         },
 
-        /**
-         * Resets ViewSettingsDialog filters.
-         */
+        // Sıralama ve kategori filtrelerini sıfırlar
         onResetViewSettings: function () {
             var oView = this.getView();
             var oViewModel = oView.getModel("viewModel");
@@ -393,45 +370,36 @@ sap.ui.define([
             this._applyFiltersAndSorting();
         },
 
-        /**
-         * Clears all filters (tab, search, category), resets columns to default 5,
-         * clears ViewSettingsDialog state and returns the list to its exact initial state.
-         */
+        // Tüm filtreleri temizler ve varsayılan görünüme döner
         onClearFilters: function () {
             var oView = this.getView();
             var oViewModel = oView.getModel("viewModel");
             var oBundle = this.getResourceBundle();
 
-            // 1. Reset view model filter & sort properties
             oViewModel.setProperty("/selectedTab", "all");
             oViewModel.setProperty("/searchQuery", "");
             oViewModel.setProperty("/selectedCategory", "");
             oViewModel.setProperty("/sortField", "submissionDate");
             oViewModel.setProperty("/sortDescending", true);
 
-            // 2. Reset columns to default 5 visible columns
             var oDefaultCols = JSON.parse(JSON.stringify(DEFAULT_COLUMNS));
             oViewModel.setProperty("/columns", oDefaultCols);
 
-            // 3. Reset temporary viewSettingsModel
             var oViewSettingsModel = oView.getModel("viewSettingsModel");
             if (oViewSettingsModel) {
                 oViewSettingsModel.setData(JSON.parse(JSON.stringify(DEFAULT_COLUMNS)));
             }
 
-            // 4. Reset SearchField input UI
             var oSearchField = this.byId("searchField");
             if (oSearchField) {
                 oSearchField.setValue("");
             }
 
-            // 5. Reset IconTabBar UI
             var oTabBar = this.byId("iconTabBar");
             if (oTabBar) {
                 oTabBar.setSelectedKey("all");
             }
 
-            // 6. Reset ViewSettingsDialog control state safely without triggering recursive events
             if (this._pViewSettingsDialog) {
                 this._pViewSettingsDialog.then(function (oDialog) {
                     if (oDialog) {
@@ -449,26 +417,16 @@ sap.ui.define([
                 });
             }
 
-            // 7. Apply cleared filters, sort and refresh table binding
             this._applyFiltersAndSorting();
             MessageToast.show(oBundle.getText("msgFilterReset"));
         },
 
-        /**
-         * Refreshes submission data from backend.
-         */
+        // Verileri backend'den tazeler
         onRefresh: function () {
             this._loadSubmissions(true);
         },
 
-        // =================================================================
-        // FAZ 6 — ADIM 6.3: DETAY DİYALOĞU VE PDF ÖNİZLEME YÖNETİMİ
-        // =================================================================
-
-        /**
-         * Handles table row press to open Detail Dialog.
-         * @param {sap.ui.base.Event} oEvent
-         */
+        // Satıra tıklandığında detay diyaloğunu açar
         onRowPress: function (oEvent) {
             var oItem = oEvent.getSource();
             var oCtx = oItem.getBindingContext("submissions");
@@ -481,10 +439,7 @@ sap.ui.define([
             }
         },
 
-        /**
-         * Opens the detail dialog and loads the submission details and certificate stream from backend.
-         * @param {string} sId Submission UUID
-         */
+        // Detay diyaloğunu açar ve başvuru/sertifika verilerini yükler
         _openDetailDialog: async function (sId) {
             var oView = this.getView();
             var oDetailModel = oView.getModel("detailModel");
@@ -518,7 +473,7 @@ sap.ui.define([
             oDialog.open();
 
             try {
-                // Fetch latest single record from backend
+                // Güncel tekil kaydı çeker
                 var oResponse = await fetch("/odata/v4/approval/Submissions(" + sId + ")", {
                     method: "GET",
                     headers: this._getAuthHeaders()
@@ -554,7 +509,7 @@ sap.ui.define([
                 oDetailModel.setProperty("/certificateFileName", oSubmission.certificateFileName || "");
                 oDetailModel.setProperty("/certificateMimeType", oSubmission.certificateMimeType || "application/pdf");
 
-                // Build 3-stage ProcessFlow model
+                // 3 aşamalı süreç akışını (ProcessFlow) kurar
                 var oProcessFlow = this._buildProcessFlow(oSubmission.status, oSubmission, oBundle);
                 oDetailModel.setProperty("/processFlow", oProcessFlow);
 
@@ -568,7 +523,7 @@ sap.ui.define([
                 var bHasCertName = !!(oSubmission.certificateFileName && oSubmission.certificateFileName.trim());
                 oDetailModel.setProperty("/hasPdf", bHasCertName);
 
-                // Fetch real certificate binary stream for inline preview
+                // Sertifika ikili veri akışını (PDF) çekip önizleme için blob URL üretir
                 var sDirectPdfUrl = "/odata/v4/approval/Submissions(" + sId + ")/certificate";
                 oDetailModel.setProperty("/pdfDirectUrl", sDirectPdfUrl);
 
@@ -605,13 +560,7 @@ sap.ui.define([
             }
         },
 
-        /**
-         * Builds 3-stage ProcessFlow model for the detail view.
-         * @param {string} sStatus Submission status
-         * @param {Object} oSubmission Submission data
-         * @param {Object} oBundle Resource bundle
-         * @returns {Object} lanes and nodes
-         */
+        // Statüye göre ProcessFlow şerit ve düğümlerini dinamik oluşturur
         _buildProcessFlow: function (sStatus, oSubmission, oBundle) {
             var aLanes = [
                 {
@@ -719,18 +668,14 @@ sap.ui.define([
             };
         },
 
-        /**
-         * Toggles the inline PDF preview viewer visibility.
-         */
+        // PDF önizleme panelini açıp kapatır
         onTogglePdfPreview: function () {
             var oDetailModel = this.getView().getModel("detailModel");
             var bCurrent = oDetailModel.getProperty("/showPdfPreview");
             oDetailModel.setProperty("/showPdfPreview", !bCurrent);
         },
 
-        /**
-         * Opens the certificate PDF stream in a new browser tab and triggers download.
-         */
+        // PDF sertifikasını yeni sekmede açar ve indirmeyi tetikler
         onOpenPdfInNewTab: async function () {
             var oDetailModel = this.getView().getModel("detailModel");
             var sUrl = oDetailModel.getProperty("/pdfBlobUrl");
@@ -738,7 +683,6 @@ sap.ui.define([
             var sFileName = oDetailModel.getProperty("/certificateFileName") || "certificate.pdf";
             var sId = oDetailModel.getProperty("/ID");
 
-            // If blob url is not yet available, attempt to fetch it now
             if (!sUrl && sId) {
                 try {
                     var oCertHeaders = Object.assign({}, this._getAuthHeaders());
@@ -757,17 +701,15 @@ sap.ui.define([
                         }
                     }
                 } catch (e) {
-                    // Fallback to direct URL
+                    // Direct URL alternatifi kullanılır
                 }
             }
 
             var sTargetUrl = sUrl || sDirectUrl;
 
             if (sTargetUrl && typeof window !== "undefined") {
-                // 1. Open in new browser tab
                 window.open(sTargetUrl, "_blank");
 
-                // 2. Also trigger direct download if blob URL is available
                 if (sUrl && sUrl.startsWith("blob:")) {
                     try {
                         var oDownloadLink = document.createElement("a");
@@ -777,15 +719,13 @@ sap.ui.define([
                         oDownloadLink.click();
                         document.body.removeChild(oDownloadLink);
                     } catch (err) {
-                        // ignore anchor click error
+                        // İndirme tetikleme hatası göz ardı edilir
                     }
                 }
             }
         },
 
-        /**
-         * Closes the Detail Dialog and frees up memory from any created blob URL.
-         */
+        // Detay diyaloğunu kapatır ve oluşturulan blob URL belleğini temizler
         onCloseDetailDialog: function () {
             var oDetailModel = this.getView().getModel("detailModel");
             var sBlobUrl = oDetailModel.getProperty("/pdfBlobUrl");
@@ -800,12 +740,7 @@ sap.ui.define([
             }
         },
 
-        /**
-         * Handles manual approval of the supplier submission via real CAP ApprovalService.
-         * Prompts the approver with a confirmation dialog, prevents duplicate submissions,
-         * calls the real bound action Submissions(ID)/approve, and refreshes the UI strictly
-         * based on the real backend response.
-         */
+        // Başvuruyu onaylar (CAP ApprovalService bound action)
         onApprovePress: function () {
             var oDetailModel = this.getView().getModel("detailModel");
             var sId = oDetailModel.getProperty("/ID");
@@ -816,7 +751,6 @@ sap.ui.define([
                 return;
             }
 
-            // Prevent duplicate clicks while an action is already in progress
             if (oDetailModel.getProperty("/actionBusy")) {
                 return;
             }
@@ -838,7 +772,6 @@ sap.ui.define([
                                 "Content-Type": "application/json"
                             }, this._getAuthHeaders());
 
-                            // Call real CAP ApprovalService bound action
                             var oResponse = await fetch("/odata/v4/approval/Submissions(" + sId + ")/approve", {
                                 method: "POST",
                                 headers: oHeaders,
@@ -854,10 +787,8 @@ sap.ui.define([
                                 return;
                             }
 
-                            // Reload submission directly from backend to guarantee truth in UI
+                            // Tekil kaydı ve tablo listesini günceller
                             await this._reloadSubmission(sId);
-
-                            // Refresh table list & counts in main view
                             await this._loadSubmissions();
 
                             MessageToast.show(oBundle.getText("msgApproveSuccess"));
@@ -871,10 +802,7 @@ sap.ui.define([
             });
         },
 
-        /**
-         * Reloads a single submission record from real backend and updates ProcessFlow and UI models.
-         * @param {string} sId Submission UUID
-         */
+        // Tekil başvuruyu backend'den yeniler ve UI akışını günceller
         _reloadSubmission: async function (sId) {
             var oDetailModel = this.getView().getModel("detailModel");
             var oBundle = this.getResourceBundle();
@@ -891,12 +819,10 @@ sap.ui.define([
 
                 var oSubmission = await oResponse.json();
 
-                // Strictly update from real backend response
                 oDetailModel.setProperty("/status", oSubmission.status);
                 oDetailModel.setProperty("/rejectionReason", oSubmission.rejectionReason || "");
                 oDetailModel.setProperty("/editableFields", oSubmission.editableFields || "");
 
-                // Re-evaluate 3-stage ProcessFlow
                 var oProcessFlow = this._buildProcessFlow(oSubmission.status, oSubmission, oBundle);
                 oDetailModel.setProperty("/processFlow", oProcessFlow);
 
@@ -907,14 +833,11 @@ sap.ui.define([
                     }
                 }.bind(this), 0);
             } catch (e) {
-                // Ignore network errors on background reload
+                // Arka plan yenileme hataları göz ardı edilir
             }
         },
 
-        /**
-         * Opens the rejection dialog and resets the rejectModel with empty fields,
-         * or pre-populates with AI rejection suggestion if available.
-         */
+        // Reddetme diyaloğunu açar; varsa AI önerisini forma aktarır
         onRejectPress: async function () {
             var oView = this.getView();
             var oDetailModel = oView.getModel("detailModel");
@@ -926,7 +849,7 @@ sap.ui.define([
                 return;
             }
 
-            // If AI recommended rejection, pre-populate the reason and pre-select certificate
+            // AI red önerdiyse gerekçe ve alan seçimini otomatik doldurur
             var bAiRejection = oDetailModel.getProperty("/hasAiReport") &&
                 (oDetailModel.getProperty("/aiReport/validityStatus") !== "Valid" ||
                  (oDetailModel.getProperty("/aiReport/recommendation") || "").indexOf("Reddet") !== -1);
@@ -972,23 +895,17 @@ sap.ui.define([
             oDialog.open();
         },
 
-        /**
-         * Live change listener for the rejection reason text area.
-         */
+        // Ret gerekçesi değiştiğinde formu doğrular
         onRejectReasonLiveChange: function () {
             this._validateRejectForm();
         },
 
-        /**
-         * Selection change listener for editable fields checkboxes.
-         */
+        // Düzeltilecek alan seçimi değiştiğinde formu doğrular
         onRejectFieldSelect: function () {
             this._validateRejectForm();
         },
 
-        /**
-         * Selects only the certificate field and unchecks all others.
-         */
+        // Sadece sertifika alanını seçer
         onSelectCertOnly: function () {
             var oRejectModel = this.getView().getModel("rejectModel");
             oRejectModel.setProperty("/fields", {
@@ -1006,9 +923,7 @@ sap.ui.define([
             this._validateRejectForm();
         },
 
-        /**
-         * Unchecks all editable fields.
-         */
+        // Seçilen tüm alanları temizler
         onClearAllFields: function () {
             var oRejectModel = this.getView().getModel("rejectModel");
             oRejectModel.setProperty("/fields", {
@@ -1026,11 +941,7 @@ sap.ui.define([
             this._validateRejectForm();
         },
 
-        /**
-         * Validates the rejection form: reason must not be whitespace-only,
-         * and at least one editable field must be selected.
-         * @returns {boolean} Whether the form is valid to submit
-         */
+        // Ret gerekçesi ve alan seçiminin doluluğunu denetler
         _validateRejectForm: function () {
             var oRejectModel = this.getView().getModel("rejectModel");
             if (!oRejectModel) {
@@ -1048,9 +959,7 @@ sap.ui.define([
             return bCanSubmit;
         },
 
-        /**
-         * Submits the rejection to the real CAP ApprovalService bound action.
-         */
+        // Reddetme işlemini backend'e iletir (CAP ApprovalService bound action)
         onConfirmReject: async function () {
             var oBundle = this.getResourceBundle();
             var oRejectModel = this.getView().getModel("rejectModel");
@@ -1094,7 +1003,6 @@ sap.ui.define([
                     "Content-Type": "application/json"
                 }, this._getAuthHeaders());
 
-                // Call real CAP ApprovalService bound reject action
                 var oResponse = await fetch("/odata/v4/approval/Submissions(" + sId + ")/reject", {
                     method: "POST",
                     headers: oHeaders,
@@ -1113,13 +1021,8 @@ sap.ui.define([
                     return;
                 }
 
-                // Close reject dialog
                 this.onCloseRejectDialog();
-
-                // Reload submission directly from backend to guarantee truth in UI
                 await this._reloadSubmission(sId);
-
-                // Refresh table list & counts in main view
                 await this._loadSubmissions();
 
                 MessageToast.show(oBundle.getText("msgRejectSuccess"));
@@ -1131,9 +1034,7 @@ sap.ui.define([
             }
         },
 
-        /**
-         * Closes the reject dialog.
-         */
+        // Reddetme diyaloğunu kapatır
         onCloseRejectDialog: function () {
             if (this._pRejectDialog) {
                 this._pRejectDialog.then(function (oDialog) {
@@ -1142,10 +1043,7 @@ sap.ui.define([
             }
         },
 
-        /**
-         * Triggers AI certificate analysis on the real CAP ApprovalService bound action.
-         * Displays decision support report without mutating the submission status.
-         */
+        // Yapay zeka ile sertifika analizi yapar (CAP analyzeCertificate action)
         onAnalyzeCertificate: async function () {
             var oDetailModel = this.getView().getModel("detailModel");
             var sId = oDetailModel.getProperty("/ID");
@@ -1155,7 +1053,6 @@ sap.ui.define([
                 return;
             }
 
-            // Prevent concurrent/duplicate clicks
             if (oDetailModel.getProperty("/aiBusy")) {
                 return;
             }
@@ -1173,7 +1070,6 @@ sap.ui.define([
                     "Content-Type": "application/json"
                 }, this._getAuthHeaders());
 
-                // Call real CAP ApprovalService bound action
                 var oResponse = await fetch("/odata/v4/approval/Submissions(" + sId + ")/analyzeCertificate", {
                     method: "POST",
                     headers: oHeaders,
@@ -1198,7 +1094,6 @@ sap.ui.define([
                     ? String(oAiData.recommendation)
                     : (sValidityStatus === "Valid" ? "Öneri: Onayla" : "Öneri: Reddet");
 
-                // Bind strictly to backend AIReport fields
                 oDetailModel.setProperty("/aiReport", {
                     validityStatus: sValidityStatus,
                     recommendation: sRecommendation,
