@@ -1,10 +1,13 @@
 namespace codeup.supplier.management;
 
+// Veritabanı şemasını içe aktarır
 using { codeup.supplier.management as db } from '../db/schema';
 
+// Tedarikçi portalının bağlandığı genel (public) OData V4 servisi
 @path: '/odata/v4/public'
 service PublicService {
 
+  // Giriş ve kayıt sonrası dönen yanıt yapısı
   type AuthResponse {
     success    : Boolean;
     message    : String;
@@ -13,6 +16,7 @@ service PublicService {
     email      : String;
   }
 
+  // Tedarikçinin kendi başvurusunu okuduğu salt-okunur görünüm
   @readonly
   entity Submissions as projection on db.Submissions {
     ID,
@@ -35,18 +39,22 @@ service PublicService {
     certificateFileName
   };
 
+  // Yeni tedarikçi hesabı oluşturma
   action register(
     email    : String,
     password : String
   ) returns AuthResponse;
 
+  // Tedarikçi giriş işlemi (token üretir)
   action login(
     email    : String,
     password : String
   ) returns AuthResponse;
 
+  // Giriş yapan tedarikçinin mevcut başvurusunu getirir
   function getMySubmission() returns Submissions;
 
+  // Yeni başvuru ve PDF sertifika yükleme işlemi
   action createSubmission(
     companyName         : String,
     contactPerson       : String,
@@ -62,6 +70,7 @@ service PublicService {
     certificateMimeType : String
   ) returns Submissions;
 
+  // Reddedilen başvuruyu izinli alanlarla tekrar gönderme
   action reApplySubmission(
     submissionId        : UUID,
     companyName         : String,
