@@ -54,7 +54,7 @@ function checkApprovalRole(req) {
   }
 }
 
-async function handleApprove(submissionId, req) {  // Başvuruyu ONAYLAMA (Approve) İşlemi
+async function handleApprove(submissionId, req) {  // Başvuruyu ONAYLAMA İşlemi
   checkApprovalRole(req);
 
   if (!submissionId) {
@@ -81,7 +81,8 @@ async function handleApprove(submissionId, req) {  // Başvuruyu ONAYLAMA (Appro
       status: 'Approved',
       editableFields: null
     })
-    .where({ ID: submissionId });
+    .where({ ID: submissionId }); // yalnızca seçilen başvuruyu güncelle
+  // yani backend, başvurunun veritabanındaki başvuru durumunu da günceller. 
 
   const ApprovalSubmissions = 'codeup.supplier.management.ApprovalService.Submissions';  // Güncellenmiş kaydı geri döndür
   const updated = await SELECT.one.from(ApprovalSubmissions).where({ ID: submissionId });
@@ -246,7 +247,7 @@ async function handleAnalyzeCertificate(submissionId, req) {  // Veritabanındak
   }
 
   if (certMimeType && certMimeType !== 'application/pdf') {
-    return req.reject(400, 'Yalnızca PDF formatındaki sertifikalar analiz edilebilir.');
+    return req.reject(400, 'Yalnızca PDF formatındaki sertifikalar analiz edilebilir.'); // format pdf degilse geminiye gitmeden sistem bunu engeller
   }
 
   let certBuffer;   // Veritabanından gelen veriyi Buffer formatına güvenli bir şekilde dönüştür (farklı DB türleri için fallback)
@@ -315,13 +316,13 @@ async function handleAnalyzeCertificate(submissionId, req) {  // Veritabanındak
     const result = typeof geminiService.post === 'function'  // Gemini AI servisine HTTP POST isteği gönder (Model: gemini-3.5-flash-lite)
       ? await geminiService.post('/models/gemini-3.5-flash-lite:generateContent', geminiPayload)
       : await geminiService.send({
-          method: 'POST',
-          path: '/models/gemini-3.5-flash-lite:generateContent',
-          data: geminiPayload,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
+        method: 'POST',
+        path: '/models/gemini-3.5-flash-lite:generateContent',
+        data: geminiPayload,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
 
     const rawText =   // AI'dan gelen sonucu yakala ve çözümle
       result?.candidates?.[0]?.content?.parts?.[0]?.text ||

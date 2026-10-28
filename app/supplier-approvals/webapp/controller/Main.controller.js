@@ -180,9 +180,9 @@ sap.ui.define([
                 }
 
                 var oData = await oResponse.json();
-                var aItems = oData.value || [];
+                var aItems = oData.value || [];  // backendden gelen başvuru listesi
 
-                oSubmissionsModel.setProperty("/items", aItems);
+                oSubmissionsModel.setProperty("/items", aItems);  //böylece başvurular ekranda kullanılabilir
                 this._updateCounts(aItems);
                 this._applyFiltersAndSorting();
 
@@ -307,9 +307,9 @@ sap.ui.define([
         onOpenViewSettings: function () {
             var oView = this.getView();
             var oViewModel = oView.getModel("viewModel");
-            
+
             var oColumnsCopy = JSON.parse(JSON.stringify(oViewModel.getProperty("/columns")));
-            
+
             var oViewSettingsModel = oView.getModel("viewSettingsModel");
             if (!oViewSettingsModel) {
                 oViewSettingsModel = new JSONModel(oColumnsCopy);
@@ -362,11 +362,11 @@ sap.ui.define([
         onResetViewSettings: function () {
             var oView = this.getView();
             var oViewModel = oView.getModel("viewModel");
-            
+
             oViewModel.setProperty("/sortField", "submissionDate");
             oViewModel.setProperty("/sortDescending", true);
             oViewModel.setProperty("/selectedCategory", "");
-            
+
             this._applyFiltersAndSorting();
         },
 
@@ -742,8 +742,8 @@ sap.ui.define([
 
         // Başvuruyu onaylar (CAP ApprovalService bound action)
         onApprovePress: function () {
-            var oDetailModel = this.getView().getModel("detailModel");
-            var sId = oDetailModel.getProperty("/ID");
+            var oDetailModel = this.getView().getModel("detailModel"); //açık olan başvuruların detaylarını tutar.
+            var sId = oDetailModel.getProperty("/ID"); // o başvurunun benzersiz kimliği. ıd gerekli çünkü sistem hangi başvurunun onaylanacağını bilmeli.
             var sCompany = oDetailModel.getProperty("/companyName") || "";
             var oBundle = this.getResourceBundle();
 
@@ -772,7 +772,7 @@ sap.ui.define([
                                 "Content-Type": "application/json"
                             }, this._getAuthHeaders());
 
-                            var oResponse = await fetch("/odata/v4/approval/Submissions(" + sId + ")/approve", {
+                            var oResponse = await fetch("/odata/v4/approval/Submissions(" + sId + ")/approve", { // kullanıcı onay verirse backend'e istek gönderiliyor. bu istek diyor ki: bu ıd'ye sahip başvuruyu onayla.
                                 method: "POST",
                                 headers: oHeaders,
                                 body: "{}"
@@ -852,7 +852,7 @@ sap.ui.define([
             // AI red önerdiyse gerekçe ve alan seçimini otomatik doldurur
             var bAiRejection = oDetailModel.getProperty("/hasAiReport") &&
                 (oDetailModel.getProperty("/aiReport/validityStatus") !== "Valid" ||
-                 (oDetailModel.getProperty("/aiReport/recommendation") || "").indexOf("Reddet") !== -1);
+                    (oDetailModel.getProperty("/aiReport/recommendation") || "").indexOf("Reddet") !== -1);
 
             var sInitialReason = bAiRejection ? (oDetailModel.getProperty("/aiReport/reason") || "") : "";
             var sSuggested = (oDetailModel.getProperty("/aiReport/suggestedFields") || "").toLowerCase();
